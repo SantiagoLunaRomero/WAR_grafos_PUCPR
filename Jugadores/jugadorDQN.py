@@ -2,77 +2,16 @@ import numpy as np
 import random
 from collections import deque
 from tensorflow import keras
-from tensorflow.keras.layers import Input, Conv2D, Dense, Flatten, Concatenate,Conv3D
+from tensorflow.keras.layers import Input, Conv2D, Dense, Flatten, Concatenate
 from tensorflow.keras.models import Model
 from Jugadores.jugador import Jugador
 import math
-import json
-import os
-from keras.callbacks import TensorBoard
-from keras.layers import Dropout,MaxPooling2D,MaxPooling3D
-from keras.regularizers import l2
-from keras.layers import  BatchNormalization
-from keras.optimizers import Adam
-tensorboard = TensorBoard(log_dir='./logs', histogram_freq=0, write_graph=True, write_images=True)
-class ReplayMemory:
-    def __init__(self, max_size=2000, filename=None):
-        self.buffer = deque(maxlen=max_size)
-        self.filename = filename
-                
-        if filename and os.path.exists(filename):
-            with open(filename, 'r') as f:
-                lines = f.readlines()
-                for line in lines[-max_size:]:
-                    item = json.loads(line.strip())
-                    self.buffer.append((
-                        np.array(item['state_history']),  # Cambiado de 'state' a 'state_history'
-                        {k: np.array(v) for k, v in item['action'].items()},
-                        item['reward'],
-                        np.array(item['next_state_history']) if item['next_state_history'] else None  # Cambiado de 'next_state' a 'next_state_history'
-                    ))
 
-    def save_to_json(self, transition):
-        if self.filename:
-            with open(self.filename, 'a') as file:
-                file.write(json.dumps(transition) + '\n')
-            with open("Transitions_acumulada.json", 'a') as file:
-                file.write(json.dumps(transition) + '\n')
-
-
-    def truncate_file(self):
-        """Verifica y trunca el archivo si supera 2 veces el maxlen."""
-        with open(self.filename, 'r') as file:
-            lines = file.readlines()
-            
-        # Si el número de transiciones excede 2*max_size, truncar el archivo
-        if len(lines) > 1.1 * self.buffer.maxlen:
-            # Conservar solo las últimas transiciones igual a 2*max_size
-            with open(self.filename, 'w') as file:
-                file.writelines(lines[-(1.1*self.buffer.maxlen):])
-
-    def store(self, state_history, action, reward, next_state_history):
-        self.buffer.append((state_history, action, reward, next_state_history))
-        
-        # Convertir a lista solo si es un objeto numpy
-        transition = {
-            'state_history': state_history.tolist() if isinstance(state_history, np.ndarray) else state_history,
-            'action': {k: (v.tolist() if isinstance(v, np.ndarray) else v) for k, v in action.items()}, 
-            'reward': reward,
-            'next_state_history': next_state_history.tolist() if (next_state_history is not None and isinstance(next_state_history, np.ndarray)) else next_state_history
-        }
-        self.save_to_json(transition)
-
-
-    def sample(self, batch_size):
-        return random.sample(self.buffer, batch_size)
-
-    def __len__(self):
-        return len(self.buffer)
 
 
 class FusionAgenteDQN(Jugador):
 
-    def __init__(self, nombre, color, mision, alpha=0.1, gamma=0.6, epsilon=0.7, epsilon_decay=0.995, epsilon_min=0.01):
+    def __init__(self, nombre, color, mision, alpha=0.1, gamma=0.6, epsilon=0.8, epsilon_decay=0.998, epsilon_min=0.01):
         super().__init__(nombre, color, mision)
         
         # Parámetros del algoritmo
@@ -83,11 +22,8 @@ class FusionAgenteDQN(Jugador):
         self.epsilon_min = epsilon_min
         self.recompensa_acumulada = 0
         
-        #REFORZAR ATACAR MOVER TROPAS : 
-        self.tropas_disponibles = self.tropas_por_turno 
         # Historial y mapeo de acciones
-        self.historial_maxlen = 25
-        self.historial_estados = deque(maxlen=self.historial_maxlen)
+        self.historial_estados = deque(maxlen=10)
         self.nombres_paises = []
 
         self.debug = True
@@ -101,13 +37,6 @@ class FusionAgenteDQN(Jugador):
             self.update_target_model()
             self.debug_print("Modelo creado desde cero.")
 
-        # Variables para las mejoras
-        self.learning_counter = 0
-        self.train_frequency = 75  # Entrenar el modelo cada 5 acciones
-        self.target_update_frequency = 75*3  # Actualizar el modelo objetivo cada 10 acciones
-        self.target_update_counter = 0
-        self.memory = ReplayMemory(max_size=3000, filename="transitions.json") # Almacenar transiciones en JSON
-        self.batch_size = 256
 
     def debug_print(self, message):
         if self.debug:
@@ -115,35 +44,22 @@ class FusionAgenteDQN(Jugador):
 
     # ----------------------- Métodos relacionados con el modelo -----------------------
 
-
     def create_multi_output_model(self):
         """Crea y retorna el modelo DQN con múltiples salidas."""
-        input_caracteristicas = Input(shape=(6, 61,self.historial_maxlen,1), name="input_caracteristicas")
+        input_caracteristicas = Input(shape=(6, 61, 10), name="input_caracteristicas")
         input_adyacencia = Input(shape=(42, 42), name="input_adyacencia")
 
         # Capas convolucionales para características
-        x_features = Conv3D(32, (7, 7,7), activation='relu', padding='same', kernel_regularizer=l2(0.01))(input_caracteristicas)
-        x_features = Dropout(0.15)(x_features)
-
-        x_features = Conv3D(64, (5,5,5), activation='relu', padding='same', kernel_regularizer=l2(0.01))(x_features)
-        x_features = MaxPooling3D((2, 2,2))(x_features)
-        x_features = Dropout(0.15)(x_features)
-
-        x_features = Conv3D(128, (3, 3,3), activation='relu', padding='same', kernel_regularizer=l2(0.01))(x_features)
-        x_features = MaxPooling3D((2, 2,2))(x_features)
-        x_features = Dropout(0.15)(x_features)
-
+        x_features = Conv2D(32, (3, 3), activation='relu')(input_caracteristicas)
+        x_features = Conv2D(64, (3, 3), activation='relu')(x_features)
         x_features = Flatten()(x_features)
 
         # Añade una dimensión extra a la matriz de adyacencia
         x_adjacency = keras.layers.Reshape((42, 42, 1))(input_adyacencia)
 
         # Capas convolucionales para matriz de adyacencia
-        x_adjacency = Conv2D(32, (3, 3), activation='relu',padding='same', kernel_regularizer=l2(0.01))(x_adjacency)  # Regularización L2
-        x_adjacency = Dropout(0.15)(x_adjacency)  # Dropout del 25%
-
-        x_adjacency = Conv2D(64, (3, 3), activation='relu',padding='same', kernel_regularizer=l2(0.01))(x_adjacency)  # Regularización L2
-        x_adjacency = Dropout(0.15)(x_adjacency)  # Dropout del 25%
+        x_adjacency = Conv2D(32, (3, 3), activation='relu')(x_adjacency)
+        x_adjacency = Conv2D(64, (3, 3), activation='relu')(x_adjacency)
         x_adjacency = Flatten()(x_adjacency)
 
         combined = Concatenate()([x_features, x_adjacency])
@@ -151,28 +67,25 @@ class FusionAgenteDQN(Jugador):
 
         # Bloque de capas densas antes de cada salida
         def dense_block(input_tensor, units):
-            x = Dense(units[0], activation='relu', kernel_regularizer=l2(0.01))(input_tensor)  # Regularización L2
-            x = Dropout(0.25)(x)  # Dropout del 50%
-            x = Dense(units[1], activation='relu', kernel_regularizer=l2(0.01))(x)  # Regularización L2
-            if len(units) == 3:
-                x = Dropout(0.25)(x)  # Dropout del 50%
-                x = Dense(units[2], activation='relu', kernel_regularizer=l2(0.01))(x)  # Regularización L2
+            x = Dense(units[0], activation='relu')(input_tensor)
+            x = Dense(units[1], activation='relu')(x)
+            if len(units)==3:
+                x = Dense(units[2], activation='linear')(x)
             return x
 
         # Salidas con bloques densos
         reforzar_territorio = Dense(42, activation='softmax', name='reforzar_territorio')(dense_block(x, [128,128]))
-        num_tropas_reforzar = Dense(1, activation='relu', name='num_tropas_reforzar')(dense_block(x, [128,64,32]))
+        num_tropas_reforzar = Dense(1, activation='linear', name='num_tropas_reforzar')(dense_block(x, [128,64,32]))
         territorio_origen_atacar = Dense(42, activation='softmax', name='territorio_origen_atacar')(dense_block(x, [128,128]))
         territorio_destino_atacar = Dense(42, activation='softmax', name='territorio_destino_atacar')(dense_block(x, [128,128]))
         territorio_origen_mover = Dense(42, activation='softmax', name='territorio_origen_mover')(dense_block(x, [128,128]))
         territorio_destino_mover = Dense(42, activation='softmax', name='territorio_destino_mover')(dense_block(x, [128,128]))
-        num_tropas_mover = Dense(1, activation='relu', name='num_tropas_mover')(dense_block(x, [128,64,32]))
+        num_tropas_mover = Dense(1, activation='linear', name='num_tropas_mover')(dense_block(x, [128,64,32]))
 
         model = Model(inputs=[input_caracteristicas, input_adyacencia], 
                     outputs=[reforzar_territorio, num_tropas_reforzar, territorio_origen_atacar, territorio_destino_atacar, territorio_origen_mover, territorio_destino_mover, num_tropas_mover])
         
-        optimizer = Adam(lr=(1e-6))
-        model.compile(optimizer=optimizer, 
+        model.compile(optimizer='adam', 
                     loss={'reforzar_territorio': 'categorical_crossentropy', 
                             'num_tropas_reforzar': 'mse', 
                             'territorio_origen_atacar': 'categorical_crossentropy', 
@@ -193,7 +106,6 @@ class FusionAgenteDQN(Jugador):
     def load_model(self, filename):
         """Carga el modelo desde un archivo y sincroniza el modelo objetivo."""
         self.model = keras.models.load_model(filename)
-        print("Modelo cargado___as")
         self.update_target_model()
 
     # ----------------------- Métodos relacionados con acciones -----------------------
@@ -201,13 +113,13 @@ class FusionAgenteDQN(Jugador):
     # ... [Métodos como obtener_estado_completo, mask_for_phase, etc.]
     def obtener_estado_completo(self):
         if len(self.historial_estados) == 0:
-            return np.array([np.zeros((6, 61))] * self.historial_maxlen)
-        elif len(self.historial_estados) < self.historial_maxlen:
-            estado_completo = [self.historial_estados[0]] * (self.historial_maxlen - len(self.historial_estados)) + list(self.historial_estados)
+            # Retorna una matriz de ceros si el historial está vacío
+            return np.array([np.zeros((6, 61))] * 10)
+        elif len(self.historial_estados) < 10:
+            estado_completo = [self.historial_estados[0]] * (10 - len(self.historial_estados)) + list(self.historial_estados)
         else:
             estado_completo = list(self.historial_estados)
         return np.array(estado_completo)
-
     
     def obtener_estado_actual(self):
         if len(self.historial_estados) == 0:
@@ -368,162 +280,49 @@ class FusionAgenteDQN(Jugador):
                 action_vectors[key][np.argmax(valid_values)] = 1
             #print("###############__________ACCIONES DE LA RED NEURONAL___________###### : ",action_vectors)
             return action_vectors
-    def escalar_recompensa(self,recompensa):
-        recompensa = recompensa/100
-        return recompensa
 
     def aprender(self, transicion, tablero):
         estado_actual, action_vectors, recompensa, estado_siguiente = transicion
 
-        # Actualiza el historial de estados
+        # Añadir el estado actual y siguiente a los historiales
         self.historial_estados.append(estado_actual)
 
-        # Obtiene el historial completo de estados
-        state_history_current = self.obtener_estado_completo()
+        estado_original = np.expand_dims(self.obtener_estado_completo(), axis=0)
+        estado_original = np.transpose(estado_original, (0, 2, 3, 1))  # Reordenar las dimensiones
 
-        # Almacena la transición (con historial) en la memoria replay
-        self.memory.store(state_history_current, action_vectors, recompensa, estado_siguiente)
+        matriz_adyacencia = np.expand_dims(tablero.matriz_de_adyacencia(), axis=0)
+        output_names = ['reforzar_territorio', 'num_tropas_reforzar', 'territorio_origen_atacar', 
+                'territorio_destino_atacar', 'territorio_origen_mover', 'territorio_destino_mover', 
+                'num_tropas_mover']
 
-        # Reducir la frecuencia de entrenamiento
-        self.learning_counter += 1
-        if self.learning_counter % self.train_frequency != 0:
-            return
+        current_q_values = dict(zip(output_names, self.model.predict([estado_original, matriz_adyacencia])))
 
-        # Entrenar el modelo principal usando un lote aleatorio
-        if len(self.memory) >= self.batch_size:
-            batch = self.memory.sample(self.batch_size)
-            
-            estado_batch = []
-            matriz_batch = []
-            q_values_batch = {
-                'reforzar_territorio': [],
-                'num_tropas_reforzar': [],
-                'territorio_origen_atacar': [],
-                'territorio_destino_atacar': [],
-                'territorio_origen_mover': [],
-                'territorio_destino_mover': [],
-                'num_tropas_mover': []
-            }
+        # Si el juego ha terminado (estado_siguiente es None), usamos solo la recompensa
+        if estado_siguiente is not None:
+            print(estado_siguiente.shape)
+            estado_siguiente_expandido = np.expand_dims(estado_siguiente, axis=0)
+            print(estado_siguiente_expandido.shape)
+            estado_siguiente_expandido = np.transpose(estado_siguiente_expandido, (0, 2, 3, 1))
+            next_q_values = dict(zip(output_names, self.target_model.predict([estado_siguiente_expandido, matriz_adyacencia])))
 
-            for estado, accion, recomp, estado_next in batch:
-                recomp = self.escalar_recompensa(recomp)
-                estado_original = np.transpose(estado, (1, 2, 0))
-                estado_batch.append(estado_original)
+            # Actualizar los valores Q para las acciones tomadas
+            for key in action_vectors:
+                if action_vectors[key][0] == 1:  # Si es una acción categórica
+                    current_q_values[key][0][np.argmax(action_vectors[key])] = recompensa + self.gamma * np.max(next_q_values[key][0])
+                else:  # Si es una acción numérica (como número de tropas)
+                    current_q_values[key][0] = recompensa + self.gamma * next_q_values[key][0]
+        else:
+            # Si el juego ha terminado, el valor Q es simplemente la recompensa
+            for key in action_vectors:
+                if action_vectors[key][0] == 1:  # Si es una acción categórica
+                    current_q_values[key][0][np.argmax(action_vectors[key])] = recompensa
+                else:  # Si es una acción numérica (como número de tropas)
+                    current_q_values[key][0] = recompensa
 
-                matriz_adyacencia = tablero.matriz_de_adyacencia()
-                matriz_batch.append(matriz_adyacencia)
+        # Entrenar el modelo principal usando el estado completo y los valores Q actualizados
+        self.model.fit([estado_original, matriz_adyacencia], current_q_values, epochs=1, verbose=0)
 
-                output_names = [
-                    'reforzar_territorio', 'num_tropas_reforzar', 'territorio_origen_atacar', 
-                    'territorio_destino_atacar', 'territorio_origen_mover', 
-                    'territorio_destino_mover', 'num_tropas_mover'
-                ]
-
-                current_q_values = dict(zip(output_names, self.model.predict([estado_original[np.newaxis, ...], matriz_adyacencia[np.newaxis, ...]])))
-                #print("Current Q-values:", current_q_values)
-                if estado_next is not None:
-                    estado_next_expandido = np.transpose(estado_next, (1, 2, 0))
-                    next_q_values = dict(zip(output_names, self.target_model.predict([estado_next_expandido[np.newaxis, ...], matriz_adyacencia[np.newaxis, ...]])))
-                    #print("Next Q-values (from target model)::", current_q_values)
-                    for key in accion:
-                        if accion[key][0] == 1:
-                            current_q_values[key][0][np.argmax(accion[key])] = recomp + self.gamma * np.max(next_q_values[key][0])
-                        else:
-                            current_q_values[key][0] = recomp + self.gamma * next_q_values[key][0]
-                else:
-                    for key in accion:
-                        if accion[key][0] == 1:
-                            current_q_values[key][0][np.argmax(accion[key])] = recomp
-                        else:
-                            current_q_values[key][0] = recomp
-                #print("Updated Q-values:", current_q_values)
-                for key in current_q_values:
-                    q_values_batch[key].append(current_q_values[key][0])
-
-            # Convertir cada lista del diccionario en un numpy array.
-            for key in q_values_batch:
-                q_values_batch[key] = np.array(q_values_batch[key])
-            
-            estado_batch = np.array(estado_batch)
-            matriz_batch = np.array(matriz_batch)
-
-            self.model.fit([estado_batch, matriz_batch], q_values_batch, epochs=1, verbose=0,callbacks=[tensorboard])
-
-        # Actualizar el modelo objetivo
-        self.target_update_counter += 1
-        if self.target_update_counter % self.target_update_frequency == 0:
-            self.update_target_model()
-            self.target_update_counter = 0
-
-        # Decrecer epsilon
-        if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
-
-
-
-    def a_aprender(self, transicion, tablero):
-        estado_actual, action_vectors, recompensa, estado_siguiente = transicion
-
-        # Actualiza el historial de estados
-        self.historial_estados.append(estado_actual)
-        
-        # Obtiene el historial completo de estados
-        state_history_current = self.obtener_estado_completo()
-        
-
-        # Almacena la transición (con historial) en la memoria replay
-
-        self.memory.store(state_history_current, action_vectors, recompensa, estado_siguiente)
-
-        # Reducir la frecuencia de entrenamiento
-        self.learning_counter += 1
-        if self.learning_counter % self.train_frequency != 0:
-            return
-
-        # Entrenar el modelo principal usando un lote aleatorio
-        if len(self.memory) >= self.batch_size:
-            batch = self.memory.sample(self.batch_size)
-            for estado, accion, recomp, estado_next in batch:
-                recomp = self.escalar_recompensa(recomp)
-                estado_original = np.expand_dims(estado, axis=0)
-                print(estado_original.shape)
-                estado_original = np.transpose(estado_original, (0, 2, 3, 1))
-
-                matriz_adyacencia = np.expand_dims(tablero.matriz_de_adyacencia(), axis=0)
-                output_names = ['reforzar_territorio', 'num_tropas_reforzar', 'territorio_origen_atacar', 
-                        'territorio_destino_atacar', 'territorio_origen_mover', 'territorio_destino_mover', 
-                        'num_tropas_mover']
-
-                current_q_values = dict(zip(output_names, self.model.predict([estado_original, matriz_adyacencia])))
-                #print("Current Q-values:", current_q_values)
-
-                if estado_next is not None:
-                    estado_next_expandido = np.expand_dims(estado_next, axis=0)
-                    estado_next_expandido = np.transpose(estado_next_expandido, (0, 2, 3, 1))
-                    next_q_values = dict(zip(output_names, self.target_model.predict([estado_next_expandido, matriz_adyacencia])))
-                    #print("Next Q-values (from target model)::", current_q_values)
-
-                    for key in accion:
-                        if accion[key][0] == 1:
-                            current_q_values[key][0][np.argmax(accion[key])] = recomp + self.gamma * np.max(next_q_values[key][0])
-                        else:
-                            current_q_values[key][0] = recomp + self.gamma * next_q_values[key][0]
-                else:
-                    for key in accion:
-                        if accion[key][0] == 1:
-                            current_q_values[key][0][np.argmax(accion[key])] = recomp
-                        else:
-                            current_q_values[key][0] = recomp
-                #print("Updated Q-values:", current_q_values)
-                self.model.fit([estado_original, matriz_adyacencia], current_q_values, epochs=1, verbose=0, callbacks=[tensorboard])
-
-        # Actualizar el modelo objetivo
-        self.target_update_counter += 1
-        if self.target_update_counter % self.target_update_frequency == 0:
-            self.update_target_model()
-            self.target_update_counter = 0
-
-        # Decrecer epsilon
+        # Decrecer epsilon para reducir la exploración a lo largo del tiempo
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
@@ -553,7 +352,6 @@ class FusionAgenteDQN(Jugador):
         # No hay acción siguiente porque el juego ha terminado
         self.aprender((estado_actual, accion_vector_vacio, recompensa, None), tablero)
         self.recompensa_acumulada += recompensa
-        #self.memory.truncate_file()
         self.save_model("DQN_V1.h5")
         self.debug_print("Modelo guardado después de una derrota.")
 #------------------------- Recompesnas que guian a cumplir las misiones -------------------------------
@@ -629,13 +427,9 @@ class FusionAgenteDQN(Jugador):
         """Verifica si una acción es válida."""
         if accion['type'] == 'fortificar':
             # Si el territorio no existe o no pertenece al jugador, la acción es inválida.
+            print(tablero.paises[accion['territorio']].jugador)
             if accion['territorio'] not in tablero.paises or tablero.paises[accion['territorio']].jugador != self:
                 return False
-            
-            # Si se intenta reforzar con más tropas de las disponibles, la acción es inválida.
-            if accion['tropas'] > self.tropas_disponibles:
-                return False
-
         return True
 
     def aplicar_accion_reforzar(self, accion_vector, tablero):
@@ -646,12 +440,11 @@ class FusionAgenteDQN(Jugador):
             print("No validia")
             return -50, self.obtener_estado_siguiente("reforzar", tablero)
         
+        
         if accion['type'] == 'fortificar':
             pais = tablero.paises[accion['territorio']]
             pais.tropas += accion['tropas']
 
-            # Descontar las tropas usadas de las tropas disponibles
-            self.tropas_disponibles -= accion['tropas']
             # Recompensa basada en la ubicación del refuerzo
             recompensa += 10 * accion['tropas'] if self.es_territorio_vulnerable(pais, tablero) else -2 * accion['tropas']
         
@@ -661,21 +454,17 @@ class FusionAgenteDQN(Jugador):
 
     def reforzar(self, tablero):
         self.nombres_paises = list(tablero.paises.keys())
-        tropas_disponibles = self.tropas_disponibles   # Suponiendo que tienes una variable para las tropas disponibles
+        estado_actual = self.obtener_estado_actual()
+        accion_vector = self.elegir_accion(estado_actual, fase='reforzar', tablero=tablero)
+        accion = self.vector_to_action(accion_vector, fase='reforzar')
 
-        while tropas_disponibles > 0:
-            estado_actual = self.obtener_estado_actual()
-            accion_vector = self.elegir_accion(estado_actual, fase='reforzar', tablero=tablero)
-            accion = self.vector_to_action(accion_vector, fase='reforzar')
+        recompensa, estado_siguiente = self.aplicar_accion_reforzar(accion_vector, tablero)
 
-            recompensa, estado_siguiente = self.aplicar_accion_reforzar(accion_vector, tablero)
-
-            if accion['type'] == 'fortificar' and not accion['territorio']:
-                recompensa -= 10
-
-            self.recompensa_acumulada += recompensa
-            self.aprender((estado_actual, accion_vector, recompensa, estado_siguiente), tablero)
-            tropas_disponibles -= accion.get('tropas', 0)  # Reduce las tropas disponibles basado en la acción
+        if accion['type'] == 'fortificar' and not accion['territorio']:
+            recompensa -= 10
+        self.recompensa_acumulada += recompensa
+        self.aprender((estado_actual, accion_vector, recompensa, estado_siguiente), tablero)
+        
 
     def es_accion_ataque_valida(self, accion, tablero):
         """Verifica si una acción de ataque es válida."""
@@ -715,31 +504,18 @@ class FusionAgenteDQN(Jugador):
         return recompensa, estado_siguiente
 
     def atacar(self, tablero):
-        puede_atacar = True  # Inicialmente asumimos que el jugador puede atacar
-        ataques_consecutivos = 0  # Contador para ataques consecutivos sin "pass"
-        max_ataques_consecutivos = 5  # Establecer un límite para ataques consecutivos sin "pass"
+        estado_actual = self.obtener_estado_actual()
+        accion_vector = self.elegir_accion(estado_actual, fase='atacar', tablero=tablero)
+        accion = self.vector_to_action(accion_vector,fase='atacar')
 
-        while puede_atacar and ataques_consecutivos < max_ataques_consecutivos:
-            estado_actual = self.obtener_estado_actual()
-            accion_vector = self.elegir_accion(estado_actual, fase='atacar', tablero=tablero)
-            accion = self.vector_to_action(accion_vector, fase='atacar')
+        recompensa, estado_siguiente = self.aplicar_accion_atacar(accion_vector, tablero)
 
-            territorio_origen_jugador_anterior = tablero.paises[accion['territorio_origen']].jugador if accion['type'] != 'pass' else None
-            recompensa, estado_siguiente = self.aplicar_accion_atacar(accion_vector, tablero)
-            territorio_origen_jugador_actual = tablero.paises[accion['territorio_origen']].jugador if accion['type'] != 'pass' else None
-
-            if accion['type'] == 'pass':
-                recompensa -= 15
-                ataques_consecutivos = 0  # Restablecer el contador de ataques consecutivos
-            elif territorio_origen_jugador_anterior != territorio_origen_jugador_actual:
-                ataques_consecutivos += 1  # Incrementar el contador de ataques consecutivos
-
-            self.aprender((estado_actual, accion_vector, recompensa, estado_siguiente), tablero)
-            self.recompensa_acumulada += recompensa
-
-            # Verifica si aún puede atacar
-            puede_atacar = any(self.puede_atacar(p, tablero) for p in tablero.paises.values() if p.jugador == self)
-
+        if accion['type'] == 'pass' and any(self.puede_atacar(p, tablero) for p in tablero.paises.values() if p.jugador == self):
+            recompensa -= 15
+        
+        self.aprender((estado_actual, accion_vector, recompensa, estado_siguiente), tablero)
+        self.recompensa_acumulada += recompensa
+    
     def conquisto_continente(self, pais, tablero):
         # Crear un mapeo de continentes a la lista de países
         continentes = {}
@@ -770,18 +546,12 @@ class FusionAgenteDQN(Jugador):
                 return False
         return True
 
-    def aplicar_accion_mover_tropas(self, accion_vector, tablero,paises_que_recibieron):
+    def aplicar_accion_mover_tropas(self, accion_vector, tablero):
         accion = self.debug_action(accion_vector, "mover_tropas")
         recompensa = 0
 
-        # Si el territorio origen ya recibió tropas, la acción no es válida
-        if accion['territorio_origen'] in paises_que_recibieron:
-            self.debug_print("No valida : Pais ya recibio")
-            return -50, self.obtener_estado_siguiente("mover_tropas", tablero)
-
         if not self.es_accion_mover_tropas_valida(accion, tablero):
             # Si la acción de mover tropas no es válida, penaliza al agente y devuelve el estado actual.
-            self.debug_print("No valida")
             return -50, self.obtener_estado_siguiente("mover_tropas", tablero)
 
         if accion['type'] != 'pass':
@@ -796,71 +566,17 @@ class FusionAgenteDQN(Jugador):
         return recompensa, estado_siguiente
 
     def mover_tropas(self, tablero):
-        paises_que_recibieron = set()
-        movimientos_repetidos = {}  # Llevar registro de movimientos repetidos entre países
-        MAX_REPETICIONES = 3  # Límite de repeticiones para movimientos entre dos países
-        MAX_INTENTOS = 10  # Límite de intentos para mover tropas
-        intentos = 0
-        puede_mover = True
-        pasadas_consecutivas = 0
+        estado_actual = self.obtener_estado_actual()
+        accion_vector = self.elegir_accion(estado_actual, fase='mover_tropas', tablero=tablero)
+        accion = self.vector_to_action(accion_vector,fase='mover_tropas')
 
-        while puede_mover and pasadas_consecutivas < 3 and intentos < MAX_INTENTOS:
-            estado_actual = self.obtener_estado_actual()
-            accion_vector = self.elegir_accion(estado_actual, fase='mover_tropas', tablero=tablero)
-            accion = self.vector_to_action(accion_vector, fase='mover_tropas')
+        recompensa, estado_siguiente = self.aplicar_accion_mover_tropas(accion_vector, tablero)
 
-            # Verificar si el país origen ya donó tropas
-            while accion['type'] != 'pass' and accion['territorio_origen'] in paises_que_recibieron and intentos < MAX_INTENTOS:
-                accion_vector = self.elegir_accion(estado_actual, fase='mover_tropas', tablero=tablero)
-                accion = self.vector_to_action(accion_vector, fase='mover_tropas')
-                intentos += 1
+        if accion['type'] == 'pass':
+            recompensa -= 10
 
-            if accion['type'] == 'pass':
-                recompensa = -10
-                pasadas_consecutivas += 1
-            else:
-                # Verificar movimientos repetidos
-                pareja_paises = (accion['territorio_origen'], accion['territorio_destino'])
-                movimientos_repetidos[pareja_paises] = movimientos_repetidos.get(pareja_paises, 0) + 1
-                if movimientos_repetidos[pareja_paises] > MAX_REPETICIONES:
-                    recompensa = -20  # Penalización por movimientos repetidos
-                else:
-                    recompensa, _ = self.aplicar_accion_mover_tropas(accion_vector, tablero, paises_que_recibieron)
-                    if recompensa != -50:  # Evitar agregar países en caso de una acción inválida
-                        paises_que_recibieron.add(accion['territorio_destino'])
-                        pasadas_consecutivas = 0
-
-            estado_siguiente = self.obtener_estado_siguiente("mover_tropas", tablero)
-            self.aprender((estado_actual, accion_vector, recompensa, estado_siguiente), tablero)
-            self.recompensa_acumulada += recompensa
-
-            puede_mover = any(p for p in tablero.paises.values() if p.jugador == self and p.tropas > 1 and p.nombre not in paises_que_recibieron)
-
-
-    def a_mover_tropas(self, tablero):
-        paises_que_recibieron = set()  # Almacenar los territorios que ya han recibido tropas
-        puede_mover = True  # Inicialmente asumimos que el jugador puede mover tropas
-        pasadas_consecutivas = 0  # Contador para las acciones "pass" consecutivas
-
-        while puede_mover and pasadas_consecutivas < 3:  # Establecemos un límite de 3 pasadas consecutivas
-            estado_actual = self.obtener_estado_actual()
-            accion_vector = self.elegir_accion(estado_actual, fase='mover_tropas', tablero=tablero)
-            accion = self.vector_to_action(accion_vector, fase='mover_tropas')
-
-            if accion['type'] == 'pass':
-                recompensa = -10
-                pasadas_consecutivas += 1  # Incrementamos el contador de pasadas consecutivas
-            else:
-                recompensa, _ = self.aplicar_accion_mover_tropas(accion_vector, tablero)
-                paises_que_recibieron.add(accion['territorio_destino'])
-                pasadas_consecutivas = 0  # Restablecemos el contador de pasadas consecutivas
-
-            estado_siguiente = self.obtener_estado_siguiente("mover_tropas", tablero)
-            self.aprender((estado_actual, accion_vector, recompensa, estado_siguiente), tablero)
-            self.recompensa_acumulada += recompensa
-
-            # Verifica si aún puede mover tropas y si el territorio origen no ha recibido tropas
-            puede_mover = any(p for p in tablero.paises.values() if p.jugador == self and p.tropas > 1 and p.nombre not in paises_que_recibieron)
+        self.aprender((estado_actual, accion_vector, recompensa, estado_siguiente), tablero)
+        self.recompensa_acumulada += recompensa
 
 #_____________________FUNCIONES PARA SELECCION DE ACCIONES ALEATORIOAS PARA MOVER JUGAR__________________
     def puede_atacar(self, pais, tablero):
@@ -913,11 +629,9 @@ class FusionAgenteDQN(Jugador):
         territorios_controlados = self.obtener_territorios_controlados(tablero)
         if territorios_controlados:
             territorio_seleccionado = random.choice(territorios_controlados)
-            #print(territorio_seleccionado)
-            tropas_a_reforzar = random.randint(1, min(self.tropas_disponibles, self.tropas_por_turno))
-            action_vectors = self.actualizar_vector_accion(action_vectors, 'reforzar_territorio', territorio_seleccionado, tropas_a_reforzar)
-
-            #print("aleatorios:",action_vectors)
+            print(territorio_seleccionado)
+            action_vectors = self.actualizar_vector_accion(action_vectors, 'reforzar_territorio', territorio_seleccionado, self.tropas_por_turno)
+            print("aleatorios:",action_vectors)
 
         return action_vectors
 

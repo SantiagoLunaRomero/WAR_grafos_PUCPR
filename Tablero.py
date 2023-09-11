@@ -8,15 +8,37 @@ from misiones import misiones
 from misiones import descripcion_a_indice
 
 class Pais:
-    def __init__(self, nombre, continente,vecinos):
+    def __init__(self, nombre, continente, vecinos):
         self.nombre = nombre
         self.continente = continente
         self.jugador = None
         self.tropas = 0
+        self.tropas_iniciales = 0  # Tropas al inicio del turno
+        self.tropas_movidas = 0  # Tropas que se han movido durante el turno
         self.vecinos = vecinos
 
+    def set_tropas_iniciales(self):
+        """Establecer el número de tropas al inicio del turno."""
+        self.tropas_iniciales = self.tropas
+
+    def tropas_disponibles_para_mover(self):
+        """Determinar cuántas tropas están disponibles para mover."""
+        return self.tropas_iniciales - self.tropas_movidas
+
+    def mover_tropas(self, cantidad):
+        """Mover tropas de este país. Actualiza las tropas movidas."""
+        if cantidad > self.tropas_disponibles_para_mover():
+            raise ValueError("Intentando mover más tropas de las disponibles.")
+        self.tropas_movidas += cantidad
+
+    def iniciar_turno(self):
+        """Resetea las tropas movidas y establece las tropas iniciales al inicio de cada turno."""
+        self.tropas_movidas = 0
+        self.set_tropas_iniciales()
+
     def __str__(self):
-        return f"{self.nombre} - Continente: {self.continente}, Jugador: {self.jugador}, Tropas: {self.tropas}   Vecinos  :  {self.vecinos}"
+        return (f"{self.nombre} - Continente: {self.continente}, Jugador: {self.jugador}, "
+                f"Tropas: {self.tropas}, Tropas Iniciales: {self.tropas_iniciales}, Tropas Movidas: {self.tropas_movidas}, Vecinos: {self.vecinos}")
 
 class Tablero:
     def __init__(self, jugadores):
@@ -102,14 +124,38 @@ class Tablero:
                 pais_minima_distancia = pais
         return pais_minima_distancia
 
+    def reforzar_pais(self, pais_nombre, tropas, jugador):
+        """
+        Refuerza un país específico con un número dado de tropas.
+        Asegura que el jugador no asigne más tropas de las disponibles.
+        """
+
+        # Check if the country belongs to the player
+        if self.paises[pais_nombre].jugador != jugador:
+            return False, "El país no pertenece al jugador."
+
+        # Check if the player has enough troops to assign
+        if tropas > jugador.tropas_por_turno:
+            return False, "No tienes suficientes tropas para asignar."
+
+        # Assign troops
+        self.paises[pais_nombre].tropas += tropas
+        jugador.tropas_por_turno -= tropas
+
+        return True, f"{tropas} tropas asignadas a {pais_nombre}."
 
     def lanzar_dados(self, num_dados):
         return sorted([random.randint(1, 6) for _ in range(num_dados)], reverse=True)
 
     def batalla(self, pais_origen, pais_destino):
+        # Verificar si los dos países son vecinos
+        if pais_destino.nombre not in pais_origen.vecinos:
+            raise ValueError(f"No puedes atacar a {pais_destino.nombre} desde {pais_origen.nombre} porque no son vecinos.")
+
         dados_atacante = self.lanzar_dados(min(3, pais_origen.tropas - 1))
         dados_defensor = self.lanzar_dados(min(3, pais_destino.tropas))
-        #ordenar los dados
+
+        # Ordenar los dados
         dados_atacante.sort(reverse=True)
         dados_defensor.sort(reverse=True)
 
@@ -131,10 +177,13 @@ class Tablero:
             pais_destino.tropas = 1
             pais_origen.tropas -= 1
             print(f"{pais_origen.jugador.nombre} ha conquistado {pais_destino.nombre}")
+
         if pais_origen.tropas < 0:
-          raise ValueError(f"El país {pais_origen.nombre} tiene un número negativo de tropas: {pais_origen.tropas}")
+            raise ValueError(f"El país {pais_origen.nombre} tiene un número negativo de tropas: {pais_origen.tropas}")
+
         if pais_destino.tropas < 0:
-          raise ValueError(f"El país {pais_destino.nombre} tiene un número negativo de tropas: {pais_destino.tropas}")
+            raise ValueError(f"El país {pais_destino.nombre} tiene un número negativo de tropas: {pais_destino.tropas}")
+
 
 ######################################################## mover tropas.
 
@@ -142,18 +191,34 @@ class Tablero:
         # Para mover tropas, ambos países deben ser propiedad del mismo jugador y deben ser vecinos.
         pais_origen = self.paises[nombre_pais_origen]
         pais_destino = self.paises[nombre_pais_destino]
-        if self.paises[nombre_pais_origen].tropas <= 1:
-          print(f"{nombre_pais_origen} no tiene suficientes tropas para mover.")
-          return
-        if pais_destino.nombre not in pais_origen.vecinos:
+        
+        # Verificar si hay suficientes tropas en el país de origen para mover
+        if pais_origen.tropas <= 1:
+            print(f"{nombre_pais_origen} no tiene suficientes tropas para mover.")
+            return
+        
+        # Verificar que los dos países son vecinos
+        if nombre_pais_destino not in pais_origen.vecinos:
             raise ValueError(f"No puedes mover tropas a {nombre_pais_destino} desde {nombre_pais_origen} porque no son vecinos.")
+        
+        # Verificar que ambos países son del mismo jugador
         if pais_origen.jugador != pais_destino.jugador:
             raise ValueError("Solo puedes mover tropas entre tus propios territorios.")
+        
+        # Verificar que no estás intentando mover más tropas de las disponibles
+        tropas_disponibles = pais_origen.tropas_disponibles_para_mover()
+        if numero_tropas > tropas_disponibles:
+            raise ValueError(f"Solo puedes mover {tropas_disponibles} tropas de {nombre_pais_origen}.")
+        # En el método mover_tropas, antes de mover las tropas, vamos a agregar:
+
         if numero_tropas >= pais_origen.tropas:
-            raise ValueError("Siempre debes dejar al menos una tropa en cada país.")
+            raise ValueError(f"No puedes mover todas las tropas de {nombre_pais_origen}. Debes dejar al menos una tropa atrás.")
+        # Ahora, realizar el movimiento de tropas
+        pais_origen.mover_tropas(numero_tropas)  # Actualizar las tropas movidas en el país de origen
         pais_origen.tropas -= numero_tropas
         pais_destino.tropas += numero_tropas
-
+        #print("Aqui.:")
+        print(f"Se movieron {numero_tropas} tropas de {nombre_pais_origen} a {nombre_pais_destino}.")
 
 ######################################################################################################
 #REFORZAR
@@ -223,20 +288,29 @@ class Tablero:
                   print("Todos los jugadores han sido eliminados. ¡El juego ha terminado!")
                   return
               continue
+          if i > 400:
+            jugador.tropas_por_turno = 5
+          if i > 800:
+            jugador.tropas_por_turno = 6
 
-          # El jugador realiza sus acciones
-          print("_______Fase de refuerzo________")
-          jugador.reforzar(self)
-          self.actualizar_grafo()
-          self.crear_matriz_estado(self.vector_fase("reforzar"),jugador)
-          print("_______Fase de ataque________")
-          jugador.atacar(self)
-          self.actualizar_grafo()
-          self.crear_matriz_estado(self.vector_fase("atacar"),jugador)
-          print("_______Fase de movimiento________")
-          jugador.mover_tropas(self)
-          self.actualizar_grafo()
-          self.crear_matriz_estado(self.vector_fase("mover"),jugador)
+          jugador.iniciar_turno()
+          if i >6:
+            # El jugador realiza sus acciones
+            print("_______Fase de refuerzo________")
+            jugador.reforzar(self)
+            self.actualizar_grafo()
+            self.crear_matriz_estado(self.vector_fase("reforzar"),jugador)
+            print("_______Fase de ataque________")
+            jugador.atacar(self)
+            self.actualizar_grafo()
+            self.crear_matriz_estado(self.vector_fase("atacar"),jugador)
+            print("_______Fase de movimiento________")
+            jugador.mover_tropas(self)
+            self.actualizar_grafo()
+            self.crear_matriz_estado(self.vector_fase("mover"),jugador)
+          else :
+            print("_______Fase de refuerzo________")
+            jugador.reforzar(self)
 
           #self.actualizar_grafo()
           #self.dibujar_grafo()
@@ -256,6 +330,9 @@ class Tablero:
       for jugador in self.jugadores:
           jugador.informar_perdida(self,recompensa = -50)
       print("Ningún jugador ha completado su misión.")
+
+
+
     def actualizar_grafo(self):
       for nombre_pais, pais in self.paises.items():
           self.grafo.nodes[nombre_pais]['tropas'] = pais.tropas

@@ -4,7 +4,17 @@ class Jugador:
         self.color = color  # Añadimos el atributo color
         self.mision = mision
         self.paises = []
-        self.tropas_por_turno = 4
+        self.tropas_por_turno = 3
+        self.tropas_temporales = 0  # Nueva variable
+    def iniciar_turno(self):
+        for pais in self.paises:
+            pais.iniciar_turno()
+    def actualizar_tropas_por_turno(self):
+        self.tropas_por_turno += self.tropas_temporales
+        self.tropas_temporales = 0
+
+    def ganar_tropas_temporales(self, cantidad):
+        self.tropas_temporales += cantidad
 
     def reforzar(self, tablero):
         pass

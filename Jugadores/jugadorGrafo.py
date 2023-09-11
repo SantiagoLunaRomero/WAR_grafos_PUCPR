@@ -24,6 +24,10 @@ class JugadorGrafo(Jugador):
                 if continente in descripcion:
                     self.objetivos['continentes'].append(continente)
             print("_____ se ha establecido la mision de conquistar continentonces : ",self.objetivos['continentes'])
+        
+        if 'Europa' in self.objetivos['continentes'] and 'Oceanía' in self.objetivos['continentes']:
+            self.objetivos['tercero'] = True
+            print("Es neceseario tambien un continente extra : ")
 
         # Interpretar la misión de conquistar 18 territorios con al menos dos ejércitos
         if "Conquistar 18 TERRITÓRIOS" in descripcion:
@@ -40,15 +44,21 @@ class JugadorGrafo(Jugador):
           if f"Destruir totalmente OS EXÉRCITOS {color}" in descripcion:
               self.objetivos['destruir_color'] = color
 
+    def identificar_tercer_continente(self):
+            continentes = ['América del Norte', 'América del Sur', 'África', 'Asia']
+            pais_count_por_continente = {continente: sum(1 for pais in self.paises if pais.continente == continente) for continente in continentes}
+            return max(pais_count_por_continente, key=pais_count_por_continente.get)
+
 
     def reforzar(self, tablero):
-       # Identificar una lista de países objetivo según la misión
+        # Identificar una lista de países objetivo según la misión
         paises_objetivo = self.identificar_paises_objetivo(tablero)
-            # Verificar si hay países objetivo
+
+        # Verificar si hay países objetivo
         if not paises_objetivo:
             print("_________________________________No hay países objetivo para reforzar. Reforzando al azar.")
             pais_a_reforzar = random.choice(self.paises)
-            pais_a_reforzar.tropas += self.tropas_por_turno
+            tablero.reforzar_pais(pais_a_reforzar.nombre, self.tropas_por_turno, self)
             return
 
         G = tablero.construir_grafo_con_peso()
@@ -70,7 +80,9 @@ class JugadorGrafo(Jugador):
                 if vecino.jugador != self and pais.tropas <= vecino.tropas:
                     tropas_necesarias = vecino.tropas - pais.tropas + 1
                     tropas_a_asignar = min(tropas_necesarias, tropas_disponibles)
-                    pais.tropas += tropas_a_asignar
+                    
+                    # Usar la función de tablero para reforzar el país
+                    tablero.reforzar_pais(pais.nombre, tropas_a_asignar, self)
                     tropas_disponibles -= tropas_a_asignar
 
             if tropas_disponibles == 0:
@@ -80,60 +92,94 @@ class JugadorGrafo(Jugador):
         if tropas_disponibles > 0:
             tropas_por_pais = tropas_disponibles // len(self.paises)
             for pais in self.paises:
-                pais.tropas += tropas_por_pais
+                tablero.reforzar_pais(pais.nombre, tropas_por_pais, self)
+
 
     def identificar_paises_objetivo(self, tablero):
+        paises_objetivo = []
+
         # Objetivo: Conquistar continentes específicos
         if self.objetivos['continentes']:
-            return [pais for pais in tablero.paises.values() if pais.continente in self.objetivos['continentes'] and pais.jugador != self]
+            paises_objetivo = [pais for pais in tablero.paises.values() if pais.continente in self.objetivos['continentes'] and pais.jugador != self]
+
+        # Considerar el objetivo especial de un tercer continente
+        if self.objetivos.get('tercero', False):
+            tercer_continente = self.identificar_tercer_continente()
+            paises_objetivo += [pais for pais in tablero.paises.values() if pais.continente == tercer_continente and pais.jugador != self]
 
         # Objetivo: Conquistar un cierto número de territorios
-        elif self.objetivos['territorios']:
-            return [pais for pais in tablero.paises.values() if pais.jugador != self]
+        if self.objetivos['territorios']:
+            paises_objetivo += [pais for pais in tablero.paises.values() if pais.jugador != self]
 
         # Objetivo: Destruir un color específico
-        elif self.objetivos['destruir_color']:
-            return [pais for pais in tablero.paises.values() if pais.jugador.color == self.objetivos['destruir_color']]
+        if self.objetivos['destruir_color']:
+            paises_objetivo += [pais for pais in tablero.paises.values() if pais.jugador.color == self.objetivos['destruir_color']]
 
-        # Si no hay un objetivo claro (o algo salió mal), simplemente considera todos los países que no nos pertenecen
-        print("////////////////////////////////////////////////////////////////////////")
-        return [pais for pais in tablero.paises.values() if pais.jugador != self]
+        # Eliminar duplicados
+        paises_objetivo = list(set(paises_objetivo))
+
+        return paises_objetivo
 
     def atacar(self, tablero):
+        print("fase de ataque grafo")
         # 1. Determinar los países objetivo en función de la misión
         paises_objetivo = self.interpretar_objetivo_ataque(tablero)
 
         # 2. Construir el grafo con peso
         G = tablero.construir_grafo_con_peso()
 
-        # 3. Encontrar vecinos y países accesibles
-        ataques_convenientes = []
-        for objetivo in paises_objetivo:
-            for vecino in objetivo.vecinos:
-                pais_vecino = tablero.paises[vecino]
-                if pais_vecino.jugador == self and pais_vecino.tropas > 1:
-                    camino = nx.shortest_path(G, source=vecino, target=objetivo.nombre, weight='weight')
-                    if camino:
-                        pais_origen = tablero.paises[camino[0]]
-                        # 4. Seleccionar ataques convenientes
-                        if pais_origen.tropas > objetivo.tropas * 1.5:  # Condición de conveniencia
-                            ataques_convenientes.append((pais_origen, objetivo))
+        # 3. Identificar el país objetivo más cercano
+        distancias_objetivo = {}
+        for pais in self.paises:
+            distancias = nx.single_source_dijkstra_path_length(G, pais.nombre, weight='weight')
+            for objetivo in paises_objetivo:
+                if objetivo not in distancias_objetivo:
+                    distancias_objetivo[objetivo] = distancias[objetivo.nombre]
+                else:
+                    distancias_objetivo[objetivo] = min(distancias_objetivo[objetivo], distancias[objetivo.nombre])
+        if not distancias_objetivo:
+            return
+        objetivo_mas_cercano = min(distancias_objetivo, key=distancias_objetivo.get)
 
-        # 5. Realizar ataques
-        for origen, destino in ataques_convenientes:
-            tablero.batalla(origen, destino)
+        # 4. Identificar el vecino más cercano a ese país objetivo y que pertenezca al jugador
+        distancias_vecinos = {}
+        for vecino in objetivo_mas_cercano.vecinos:
+            pais_vecino = tablero.paises[vecino]
+            if pais_vecino.jugador == self:
+                distancias_vecinos[pais_vecino] = nx.dijkstra_path_length(G, pais_vecino.nombre, objetivo_mas_cercano.nombre, weight='weight')
+
+        # Verificar si hay vecinos válidos
+        if not distancias_vecinos:
+            return  # Si no hay vecinos válidos, termina la función
+
+        pais_vecino_mas_cercano = min(distancias_vecinos, key=distancias_vecinos.get)
+
+        # 5. Atacar ese vecino si cumple con las condiciones
+        if objetivo_mas_cercano.nombre in pais_vecino_mas_cercano.vecinos and pais_vecino_mas_cercano.tropas > objetivo_mas_cercano.tropas * 1.5:
+            tablero.batalla(pais_vecino_mas_cercano, objetivo_mas_cercano,self)
+
+
+
 
     def interpretar_objetivo_ataque(self, tablero):
         # Determinar los países objetivo en función de la misión
+        paises_objetivo = []
         if self.objetivos['continentes']:
-            return [pais for pais in tablero.paises.values() if pais.continente in self.objetivos['continentes'] and pais.jugador != self]
+            paises_objetivo = [pais for pais in tablero.paises.values() if pais.continente in self.objetivos['continentes'] and pais.jugador != self]
         elif self.objetivos['territorios']:
-            return [pais for pais in tablero.paises.values() if pais.jugador != self]
+            paises_objetivo = [pais for pais in tablero.paises.values() if pais.jugador != self]
         elif self.objetivos['destruir_color']:
-            return [pais for pais in tablero.paises.values() if pais.jugador.color == self.objetivos['destruir_color']]
+            paises_objetivo = [pais for pais in tablero.paises.values() if pais.jugador.color == self.objetivos['destruir_color']]
         else:
             print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-            return [pais for pais in tablero.paises.values() if pais.jugador != self]
+            paises_objetivo = [pais for pais in tablero.paises.values() if pais.jugador != self]
+
+        # Considerar el objetivo especial de un tercer continente
+        if hasattr(self.objetivos, 'tercero') and self.objetivos['tercero']:
+            tercer_continente = self.identificar_tercer_continente()
+            paises_objetivo += [pais for pais in tablero.paises.values() if pais.continente == tercer_continente and pais.jugador != self]
+
+        return paises_objetivo
 
     def mover_tropas(self, tablero):
         # Objetivo: Conquistar continentes específicos
@@ -164,11 +210,23 @@ class JugadorGrafo(Jugador):
 
     def realizar_movimiento(self, tablero, paises_objetivo):
         pesos = tablero.calcular_pesos(self, paises_objetivo)
-        pais_origen = max(self.paises, key=lambda pais: pais.tropas, default=None)
-        pais_destino = min(paises_objetivo, key=lambda pais: pesos[pais], default=None)
 
-        if pais_origen and pais_destino and pais_origen.tropas > 1:
+        # Crear una lista de todos los posibles pares de países origen-destino
+        posibles_movimientos = [(origen, destino) for origen in self.paises for destino in paises_objetivo if destino.nombre in origen.vecinos]
+
+        # Si no hay posibles movimientos, simplemente regresa
+        if not posibles_movimientos:
+            return
+
+        # Seleccionar el par que optimiza nuestras condiciones
+        mejor_movimiento = max(posibles_movimientos, key=lambda x: (x[0].tropas, -pesos[x[1]]))
+
+        pais_origen, pais_destino = mejor_movimiento
+
+        tropas_disponibles = pais_origen.tropas_disponibles_para_mover()
+        if pais_origen.tropas > 1:
             tropas_a_mover = (pais_origen.tropas - pais_destino.tropas) // 2
+            tropas_a_mover = min(tropas_a_mover, tropas_disponibles)
             if tropas_a_mover > 0:
-                pais_origen.tropas -= tropas_a_mover
-                pais_destino.tropas += tropas_a_mover
+                tablero.mover_tropas(pais_origen.nombre, pais_destino.nombre, tropas_a_mover)
+

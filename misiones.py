@@ -7,10 +7,22 @@ class Mision:
         return self.condicion(jugador, tablero)
     def get_descripcion(self):
         return self.descripcion
-    
+
+def ha_conquistado_continente(continente, jugador, tablero):
+    paises_del_continente = [pais for pais in tablero.paises.values() if pais.continente == continente]
+    return all(pais.jugador == jugador for pais in paises_del_continente)
+
 def mision_conquistar_europa_oceania_tercero(jugador, tablero):
-    continentes_conquistados = [pais.continente for pais in tablero.paises.values() if pais.jugador == jugador]
-    return continentes_conquistados.count('Europa') == 5 and continentes_conquistados.count('Oceanía') == 4 and len(set(continentes_conquistados)) >= 3
+    # Verificar conquista completa de Europa y Oceanía
+    conquista_europa = ha_conquistado_continente('Europa', jugador, tablero)
+    conquista_oceania = ha_conquistado_continente('Oceanía', jugador, tablero)
+    
+    # Lista de continentes sin Europa y Oceanía para verificar la conquista de un tercer continente
+    otros_continentes = ['América del Norte', 'América del Sur', 'Asia', 'África']
+    conquista_tercer_continente = any(ha_conquistado_continente(continente, jugador, tablero) for continente in otros_continentes)
+    
+    return conquista_europa and conquista_oceania and conquista_tercer_continente
+
 def mision_conquistar_asia_america_sul(jugador, tablero):
     return all(pais.jugador == jugador for pais in tablero.paises.values() if pais.continente in ['Asia', 'América del Sur'])
 def mision_conquistar_18_territorios_dos_ejercitos(jugador, tablero):
@@ -43,3 +55,9 @@ misiones = [
     Mision("Destruir totalmente OS EXÉRCITOS green", lambda jugador, tablero: mision_destruir_ejercitos_color(jugador, tablero, 'green'))
 ]
 descripcion_a_indice = {mision.descripcion: i for i, mision in enumerate(misiones)}
+
+
+
+def mision_conquistar_europa_oceania_tercero_a(jugador, tablero):
+    continentes_conquistados = [pais.continente for pais in tablero.paises.values() if pais.jugador == jugador]
+    return continentes_conquistados.count('Europa') == 5 and continentes_conquistados.count('Oceanía') == 4 and len(set(continentes_conquistados)) >= 3
