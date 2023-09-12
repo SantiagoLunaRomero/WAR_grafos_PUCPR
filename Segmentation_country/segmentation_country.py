@@ -1,0 +1,45 @@
+from tensorflow.keras.models import load_model
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+def predict_masks(model_path, img_path):
+    # Cargar el modelo
+    model = load_model(model_path, compile=False)
+    
+    # Leer y procesar la imagen
+    img = cv2.imread(img_path)
+    input_shape = (320, 608, 3)
+    img_resized = cv2.resize(img, (input_shape[1], input_shape[0])) #/ 255
+    img_preprocessed = np.array([img_resized])
+    
+    # Obtener la predicción del modelo
+    prediction = model.predict(img_preprocessed)
+    predicted_mask = prediction[0]
+    
+    # Nombres de los países en orden
+    countries_order = [
+        "alaska", "mackenzie", "groenladia", "vancouver", "ottawa", "labrador",
+        "california", "nova york", "mexico", "venezuela", "peru", "brasil", 
+        "argentina", "islandia", "inglaterra", "francia", "alemania", "suecia",
+        "polonia", "moscou", "omsk", "dudinka", "siberia", "vladvostok", 
+        "argelia", "egipto", "orientemedio", "aral", "Tchita", "congo", "sudan",
+        "india", "china", "mongolia", "africa del sur", "madagascar", "vietnan",
+        "japon", "sumatra", "borneo", "neuva guinea", "australia"
+    ]
+    
+    # Crear un diccionario para almacenar las máscaras predichas
+    masks_dict = {}
+    for idx, country in enumerate(countries_order):
+        masks_dict[country] = predicted_mask[:, :, idx]
+    
+    return masks_dict
+
+# Ejemplo de uso:
+model_path = "mobilenetv2_3000_.h5"
+img_path = "Imagenes Juego\war_img_ (23).png"
+masks = predict_masks(model_path, img_path)
+
+# Visualizar una de las máscaras (cambia la clave para visualizar diferentes máscaras)
+plt.imshow(masks["alaska"], cmap='gray')
+plt.show()
