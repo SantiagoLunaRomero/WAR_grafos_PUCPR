@@ -31,8 +31,8 @@ def predict_masks(model_path, img_path):
     # Crear un diccionario para almacenar las máscaras predichas
     masks_dict = {}
     for idx, country in enumerate(countries_order):
-        masks_dict[country] = predicted_mask[:, :, idx]
-    
+        masks_dict[country] = cv2.resize(predicted_mask[:, :, idx], (img.shape[1], img.shape[0]))
+
     return masks_dict
 
 # Ejemplo de uso:
