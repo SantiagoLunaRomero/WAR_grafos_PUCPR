@@ -191,14 +191,14 @@ class GameController:
                 given_reserve = 20
             self.logger.debug('init_phase {0} reserve {1}'.format(Player(self.current_player_index), given_reserve))
             self.player_controller.set_player_reserve(Player(self.current_player_index), given_reserve)
-
-            if(self.board_controller.update_player_continents(Player(self.current_player_index))):
-                self.logger.info('Player {0} conquered a continent, getting reserve... '.format(Player(self.current_player_index)))
-                player_continent_list = self.board_controller.get_player_continents_list(Player(self.current_player_index))
-                for continent in Continents:
-                    if continent in player_continent_list:
-                        self.player_controller.add_player_reserve_continent(Player(self.current_player_index), continent, continent.extra_soldiers)
-                        self.logger.info('init_phase - Player {0} conquered continent {1}, getting {2} armies'.format(Player(self.current_player_index), continent, continent.extra_soldiers))
+            self.board_controller.update_player_continents(Player(self.current_player_index))
+            # if(self.board_controller.update_player_continents(Player(self.current_player_index))):
+            #     self.logger.info('Player {0} conquered a continent, getting reserve... '.format(Player(self.current_player_index)))
+            #     player_continent_list = self.board_controller.get_player_continents_list(Player(self.current_player_index))
+            #     for continent in Continents:
+            #         if continent in player_continent_list:
+            #             self.player_controller.add_player_reserve_continent(Player(self.current_player_index), continent, continent.extra_soldiers)
+            #             self.logger.info('init_phase - Player {0} conquered continent {1}, getting {2} armies'.format(Player(self.current_player_index), continent, continent.extra_soldiers))
         
         elif (self.current_phase_index == GamePhase.ATTACK.value):
             self.logger.debug('init_phase ' + str(Player(self.current_player_index)) + ' attack phase ')
