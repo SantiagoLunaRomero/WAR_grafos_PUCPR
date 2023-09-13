@@ -1,5 +1,5 @@
 import networkx as nx
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import random
 import numpy as np
 
@@ -393,7 +393,7 @@ class Tablero:
       pos = nx.spring_layout(self.grafo)  # Esto es para definir la posición de los nodos. Puedes usar otros layouts.
 
       nx.draw(self.grafo, pos, node_color=colores, with_labels=True)
-      plt.show()
+      #plt.show()
 
     def get_matriz_historial(self):
         return self.matriz_historial

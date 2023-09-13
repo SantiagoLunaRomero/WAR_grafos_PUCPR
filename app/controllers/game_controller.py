@@ -103,8 +103,7 @@ class GameController:
         return self.current_phase_index
 
     def get_gamestate_matrix(self):
-        self.update_gamestate_matrix()
-        return self.gamestate_matrix
+        return(self.update_gamestate_matrix())
 
     def update_gamestate_matrix(self):
         gamestate_matrix = []
@@ -121,7 +120,7 @@ class GameController:
                     player_vector.append(0)
             gamestate_matrix.append(player_vector)
         self.gamestate_matrix = gamestate_matrix
-    
+        return gamestate_matrix
     def print_gamestate_matrix(self):
         self.update_gamestate_matrix()
         self.logger.debug('Gamestate matrix: \n')

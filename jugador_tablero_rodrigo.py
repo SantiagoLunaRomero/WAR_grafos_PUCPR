@@ -7,7 +7,11 @@ from agents.simple_agent_vector import simple_agent_vector
 from agents.dumb_agent_vector import dumb_agent_vector
 from Jugadores.jugadorGrafoOptimizado_2Cambios import JugadorGrafoOptimizado
 import sys
-
+import numpy as np
+from misiones import misiones
+from tablero_jugador import Tablero
+from Jugadores.jugador import Jugador
+#TODO verificar troca de missao do JugadorGrafoOptimizado dinamica
 formatter = logging.Formatter('%(asctime)s - %(name)s - (%(funcName)s) - %(levelname)s - %(message)s')
 game = GameController()
 
@@ -20,6 +24,12 @@ ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 game.logger.addHandler(ch)
+
+fh = logging.FileHandler('game.log')
+fh.setLevel(logging.DEBUG)
+fh.setFormatter(formatter)
+game.logger.addHandler(fh)
+
 
 game.start_game(6)
 
@@ -55,27 +65,61 @@ agents_list.append(agent)
 #Cinza
 matriz = game.get_gamestate_matrix()
 print(matriz[5])
-cinza_objectivos = matriz[5][-17:-3]
-print(cinza_objectivos)
-#Jugador_puc = JugadorGrafoOptimizado("JOGADOR_PUCPR_IA", colores[5], misiones[np.argmax(matriz[5][-14:])])
-#agent = JugadorGrafoOptimizado()
+cinza_objectivo = np.argmax(matriz[5][-18:-4])
+print(cinza_objectivo)
+colores = ["blue","red","green","purple","yellow","black"]
+Jugador_puc = JugadorGrafoOptimizado("JOGADOR_PUCPR_IA", colores[5], misiones[cinza_objectivo])
+
 agents_list.append(agent)
 
 game.print_gamestate_matrix()
 game.print_gamestate()
 
-steps = 0
+mision_desconocida = [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+jugador1 = Jugador("1",colores[0],mision_desconocida)
+jugador2 = Jugador("2",colores[1],mision_desconocida)
+jugador3 = Jugador("3",colores[2],mision_desconocida)
+jugador4 = Jugador("4",colores[3],mision_desconocida)
+jugador5 = Jugador("5",colores[4],mision_desconocida)
 
+jugadores = [Jugador_puc,jugador1,jugador2,jugador3,jugador4,jugador5]
+tablero = Tablero(jugadores)
+
+
+steps = 0
 
 while True:
     previous_game_phase = game.current_phase_index
-    agents_list[game.current_player_index].step()
+    gamestate_matrix = game.get_gamestate_matrix()
+    tablero.actualizarmatriz(gamestate_matrix)
+    if(game.current_player_index == 5):
+        
+        print('gamestate matrix', gamestate_matrix[5])
+        
+        if (game.current_phase_index == GamePhase.ATTACK.value):
+            pass_vector=[0] * 47
+            pass_vector[3] = 255
+            game.perform_action_vector(pass_vector)
+        else:
+            action_vector = Jugador_puc.step(gamestate_matrix, player_index=5, tablero=tablero)
+            print('phase index ', game.current_phase_index)
+            #pulando fase de ataque
+            
+            if (game.current_phase_index == GamePhase.SHIFT.value):
+                print('varios vetores de acao retorna pelo deslocar do Jugador')
+                for action in action_vector:
+                    game.perform_action_vector(action)
+            else:
+                game.perform_action_vector(action_vector)
+        input("Press Enter to continue...")
+    else:
+       agents_list[game.current_player_index].step()
     steps += 1
 
     if(game.current_phase_index == GamePhase.NONE.value and game.winner != None):
         break
     
-    if(previous_game_phase != game.current_phase_index):
+    if(previous_game_phase != game.current_phase_index): #detecta mudanca de fase, apenas para debug
         game.print_gamestate_matrix()
         game.print_gamestate()
     
@@ -84,7 +128,7 @@ while True:
     if(steps > 10000):
         print("Game ended due to too many steps")
         break
-    input("Press Enter to continue...")
+
 
 if(game.winner != None):
     game.print_gamestate()
