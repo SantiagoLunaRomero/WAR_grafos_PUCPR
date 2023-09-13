@@ -492,9 +492,8 @@ class JugadorGrafoOptimizado(Jugador):
         for pais in paises_cercanos:
             vecinos_donantes = [tablero.paises[vecino] for vecino in pais.vecinos 
                                 if tablero.paises[vecino].jugador == self and tablero.paises[vecino].tropas > 1 and vecino not in paises_donados]
-            
+
             for vecino in vecinos_donantes:
-                print("Vecinos : ",vecino.get_nombre())
                 tropas_a_mover = vecino.tropas_disponibles_para_mover()
                 if "territorios" in self.objetivos:  # Si el objetivo es conquistar territorios
                     tropas_a_mover = max(0, tropas_a_mover - 2)  # Nunca mover más de lo que dejaría al país con menos de dos tropas
@@ -507,7 +506,7 @@ class JugadorGrafoOptimizado(Jugador):
                         movimientos[(vecino.nombre, pais.nombre)] += 1
                         tropas_a_mover -= 1
                     except ValueError as e:
-                        print(f"Error al mover tropa de {vecino.nombre} a {pais.nombre}: {e}")
+                        #print(f"Error al mover tropa de {vecino.nombre} a {pais.nombre}: {e}")
                         break  # Si hay un error, detenemos el intento de mover más tropas desde ese vecino
                 paises_donados.add(vecino.nombre)
 

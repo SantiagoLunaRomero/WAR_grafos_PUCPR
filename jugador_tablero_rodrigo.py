@@ -11,6 +11,7 @@ import numpy as np
 from misiones import misiones
 from tablero_jugador import Tablero
 from Jugadores.jugador import Jugador
+
 #TODO verificar troca de missao do JugadorGrafoOptimizado dinamica
 formatter = logging.Formatter('%(asctime)s - %(name)s - (%(funcName)s) - %(levelname)s - %(message)s')
 game = GameController()
