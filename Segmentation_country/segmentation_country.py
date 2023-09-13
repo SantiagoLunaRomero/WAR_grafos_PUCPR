@@ -10,7 +10,7 @@ def predict_masks(model_path, img_path):
     # Leer y procesar la imagen
     img = cv2.imread(img_path)
     input_shape = (320, 608, 3)
-    img_resized = cv2.resize(img, (input_shape[1], input_shape[0])) #/ 255
+    img_resized = cv2.resize(img, (input_shape[1], input_shape[0]))/ 255
     img_preprocessed = np.array([img_resized])
     
     # Obtener la predicción del modelo
@@ -36,8 +36,8 @@ def predict_masks(model_path, img_path):
     return masks_dict
 
 # Ejemplo de uso:
-model_path = "mobilenetv2_3000_.h5"
-img_path = "Imagenes Juego\war_img_ (23).png"
+model_path = "Segmentation_country\DA_mobilenetv2_300_.h5"
+img_path = "Segmentation_country\war_img_ (23).png"
 masks = predict_masks(model_path, img_path)
 
 # Visualizar una de las máscaras (cambia la clave para visualizar diferentes máscaras)
