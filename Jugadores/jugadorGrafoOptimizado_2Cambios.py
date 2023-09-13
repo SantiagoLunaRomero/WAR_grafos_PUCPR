@@ -3,6 +3,7 @@ import networkx as nx
 import random
 import math
 from collections import defaultdict
+
 class JugadorGrafoOptimizado(Jugador):
     def __init__(self, nombre, color, mision):
         super().__init__(nombre, color, mision)
@@ -92,6 +93,7 @@ class JugadorGrafoOptimizado(Jugador):
             indice = nombres.index(pais)
             vector[indice + 5] = cantidad
         print(vector)
+        return vector
     def factor_priorizacion_mision(self):
         # Ajustamos según la necesidad: estos valores determinan cuándo comienza a priorizar la misión
         escala = 0.3
@@ -299,37 +301,43 @@ class JugadorGrafoOptimizado(Jugador):
     def atacar(self, tablero):
         print("Fase de ataque optimizada")
 
-        while True:
-            # Evaluar las mejores opciones de ataque
-            paises_ataque_evaluados = self.evaluar_paises_para_ataque(tablero)
-            ataques_ordenados = sorted(paises_ataque_evaluados, key=paises_ataque_evaluados.get, reverse=True)
+        #while True:
+        # Evaluar las mejores opciones de ataque
+        paises_ataque_evaluados = self.evaluar_paises_para_ataque(tablero)
+        ataques_ordenados = sorted(paises_ataque_evaluados, key=paises_ataque_evaluados.get, reverse=True)
+        pass_atack = False
+        # Verificar si hay opciones de ataque viables
+        if not ataques_ordenados:
+            pass_atack = True
 
-            # Verificar si hay opciones de ataque viables
-            if not ataques_ordenados:
+        # Seleccionar el mejor ataque viable de la lista ordenada
+        mejor_ataque = None
+        for ataque in ataques_ordenados:
+            origen, destino = ataque
+            if origen.tropas > destino.tropas:
+                mejor_ataque = ataque
                 break
 
-            # Seleccionar el mejor ataque viable de la lista ordenada
-            mejor_ataque = None
-            for ataque in ataques_ordenados:
-                origen, destino = ataque
-                if origen.tropas > destino.tropas:
-                    mejor_ataque = ataque
-                    break
+        # Si no se encontró un ataque viable, detiene la fase de ataque
+        if not mejor_ataque:
+            pass_atack = True
 
-            # Si no se encontró un ataque viable, detiene la fase de ataque
-            if not mejor_ataque:
-                break
-
-            vector=[0] * 47
-            nombres = list(tablero.paises.keys())
-            vector[0:5]=[255,0,0,0,0]
-            print("Intentando atacar de :", origen.get_nombre(), " a ", destino.get_nombre())
-            indice = nombres.index(origen.get_nombre())
-            vector[indice + 5] = 255
-            indice = nombres.index(destino.get_nombre())
-            vector[indice + 5] = 255
+        vector=[0] * 47
+        if(pass_atack):
+            vector[3] = 255
             print(vector)
-            tablero.batalla(origen, destino, self)
+            return vector
+    
+        nombres = list(tablero.paises.keys())
+        vector[0:5]=[255,0,0,0,0]
+        print("Intentando atacar de :", origen.get_nombre(), " a ", destino.get_nombre())
+        indice = nombres.index(origen.get_nombre())
+        vector[indice + 5] = 255
+        indice = nombres.index(destino.get_nombre())
+        vector[indice + 5] = 255
+        print(vector)
+        #tablero.batalla(origen, destino, self)
+        return(vector)
 
 
     def es_conquista_continente(self, tablero, pais):
@@ -501,10 +509,48 @@ class JugadorGrafoOptimizado(Jugador):
                         #print(f"Error al mover tropa de {vecino.nombre} a {pais.nombre}: {e}")
                         break  # Si hay un error, detenemos el intento de mover más tropas desde ese vecino
                 paises_donados.add(vecino.nombre)
-        # Imprimir el resumen de movimientos al final
+
+        vector=[0] * 47
+        nombres = list(tablero.paises.keys())
         print("Resumen de movimientos:")
+        action_vectors = []
         for (origen, destino), tropas in movimientos.items():
+            vector[0:5]=[0,0,255,0,tropas]
             print(f"Mover {tropas} tropas de {origen} a {destino}.")
+            indice = nombres.index(origen)
+            vector[indice + 5] = 125
+            indice = nombres.index(destino)
+            vector[indice + 5] = 255
+            action_vectors.append(vector)
+        
+        if (len(action_vectors) == 0):
+            vector[0:5]=[0,0,0,255,0]
+            print(f"No se movieron tropas")
+            action_vectors.append(vector)
+        return action_vectors
+    
+    def step(self, gamestate_matrix, player_index, tablero):
+        
+        fase_jogo = gamestate_matrix[player_index][-4:]
+        self.tropas_por_turno = gamestate_matrix[player_index][44]
+        
+        print('step - fase jogo -> ', fase_jogo)
+        print('step - tropas por turno -> ', self.tropas_por_turno)
 
-
-
+        #Reforzar
+        if(fase_jogo[1] == 255):
+            action_vector = self.reforzar(tablero)
+            return action_vector
+        #Atacar
+        elif(fase_jogo[2] == 255):
+            action_vector = self.atacar(tablero)
+            return action_vector
+        #Mover
+        elif(fase_jogo[3] == 255):
+            action_vector = self.mover_tropas(tablero)
+            return action_vector
+        #Fortificar
+        elif(fase_jogo[0] == 255):
+            print(f"Fase de jogo None")
+            None
+        None
