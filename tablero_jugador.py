@@ -82,7 +82,7 @@ class Tablero:
                 'Argelia': Pais('Argelia', 'África', ['Brasil', 'Francia', 'Egipto', 'Sudán', 'Congo']),
                 'Egipto': Pais('Egipto', 'África', ['Argelia', 'Francia', 'Polonia', 'Sudán', 'Oriente Medio']),
                 'Congo': Pais('Congo', 'África', ['Argelia', 'Sudán', 'Sudáfrica']),
-                'Sudán': Pais('Sudán', 'África', ['Argelia', 'Egipto', 'Oriente Medio', 'Madagascar', 'Sudáfrica', 'Congo']),
+                'Sudán': Pais('Sudán', 'África', ['Argelia', 'Egipto', 'Madagascar', 'Sudáfrica', 'Congo']),
                 'Madagascar': Pais('Madagascar', 'África', ['Sudán', 'Sudáfrica']),
                 'Sudáfrica': Pais('Sudáfrica', 'África', ['Congo', 'Sudán', 'Madagascar']),
 
@@ -131,7 +131,7 @@ class Tablero:
 
             if jugador is None:
                 continue  # Salta si no hay jugador con el color actual
-
+            jugador.paises = []
             for j in range(len(matriz[i])):
                 if j < len(nombres_paises):
                     cantidad_tropas = matriz[i][j]

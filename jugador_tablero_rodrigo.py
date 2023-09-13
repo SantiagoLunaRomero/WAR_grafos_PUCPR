@@ -92,11 +92,18 @@ while True:
     previous_game_phase = game.current_phase_index
     gamestate_matrix = game.get_gamestate_matrix()
     tablero.actualizarmatriz(gamestate_matrix)
+
     if(game.current_player_index == 5):
-        
         print('gamestate matrix', gamestate_matrix[5])
-        
-        
+
+        matriz = game.get_gamestate_matrix()
+        cinza_objectivo = np.argmax(matriz[5][-18:-4])
+        Jugador_puc.interpretar_mision(misiones[cinza_objectivo])
+        Jugador_puc.mision = misiones[cinza_objectivo]
+        Jugador_puc.descripcion = misiones[cinza_objectivo].descripcion
+        print(Jugador_puc.descripcion)
+
+
         action_vector = Jugador_puc.step(gamestate_matrix, player_index=5, tablero=tablero)
         print('phase index ', game.current_phase_index)
         #pulando fase de ataque
@@ -104,11 +111,13 @@ while True:
         if (game.current_phase_index == GamePhase.SHIFT.value):
             print('varios vetores de acao retorna pelo deslocar do Jugador')
             for action in action_vector:
+                
                 game.perform_action_vector(action)
         else:
             game.perform_action_vector(action_vector)
         input("Press Enter to continue...")
     else:
+       
        agents_list[game.current_player_index].step()
     steps += 1
 
