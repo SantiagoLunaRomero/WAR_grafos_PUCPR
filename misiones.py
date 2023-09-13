@@ -23,6 +23,8 @@ def mision_conquistar_europa_oceania_tercero(jugador, tablero):
     
     return conquista_europa and conquista_oceania and conquista_tercer_continente
 
+def mision_conquistar_europa_america_sul(jugador, tablero):
+    return all(pais.jugador == jugador for pais in tablero.paises.values() if pais.continente in ['Europa', 'América del Sur'])
 def mision_conquistar_asia_america_sul(jugador, tablero):
     return all(pais.jugador == jugador for pais in tablero.paises.values() if pais.continente in ['Asia', 'América del Sur'])
 def mision_conquistar_18_territorios_dos_ejercitos(jugador, tablero):
@@ -38,10 +40,24 @@ def mision_conquistar_america_norte_oceania(jugador, tablero):
     return all(pais.jugador == jugador for pais in tablero.paises.values() if pais.continente in ['América del Norte', 'Oceanía'])
 def mision_destruir_ejercitos_color(jugador, tablero, color):
     return all(pais.jugador.color != color for pais in tablero.paises.values())
-
+# – Conquistar na totalidade a EUROPA, a OCEANIA e mais um terceiro.
+# – Conquistar na totalidade a ÁSIA e a AMÉRICA DO SUL.
+# – Conquistar na totalidade a EUROPA, a AMÉRICA DO SUL e mais um terceiro.
+# – Conquistar 18 TERRITÓRIOS e ocupar cada um deles com pelo menos dois exércitos.
+# – Conquistar na totalidade a ÁSIA e a ÁFRICA.
+# – Conquistar na totalidade a AMÉRICA DO NORTE e a ÁFRICA.
+# – Conquistar 24 TERRITÓRIOS à sua escolha.
+# – Conquistar na totalidade a AMÉRICA DO NORTE e a OCEANIA.
+# – Destruir totalmente OS EXÉRCITOS AZUIS.
+# – Destruir totalmente OS EXÉRCITOS AMARELOS.
+# – Destruir totalmente OS EXÉRCITOS VERMELHOS.
+# – Destruir totalmente OS EXÉRCITOS PRETOS.
+# – Destruir totalmente OS EXÉRCITOS BRANCO.
+# – Destruir totalmente OS EXÉRCITOS VERDES.
 misiones = [
     Mision("Conquistar na totalidade a Europa, a Oceanía e mais um terceiro", mision_conquistar_europa_oceania_tercero),
     Mision("Conquistar na totalidade a Asia e a América del Sur", mision_conquistar_asia_america_sul),
+    Mision("Conquistar na totalidade a Europa e a América del Sur",mision_conquistar_europa_america_sul),
     Mision("Conquistar 18 TERRITÓRIOS e ocupar cada um deles com pelo menos dois exércitos", mision_conquistar_18_territorios_dos_ejercitos),
     Mision("Conquistar na totalidade a Asia e a África", mision_conquistar_asia_africa),
     Mision("Conquistar na totalidade a América del Norte e a África", mision_conquistar_america_norte_africa),
