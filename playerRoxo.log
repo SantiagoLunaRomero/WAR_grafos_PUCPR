@@ -1,0 +1,22 @@
+2023-09-12 23:23:49,376 - playerRoxo - INFO - doig step for game turn 3 - round 1 - Current phase 1
+2023-09-12 23:23:49,378 - playerRoxo - INFO - Fortificar aleatoriamente: 
+2023-09-12 23:23:49,379 - playerRoxo - INFO - Fortificar aleatoriamente: 
+2023-09-12 23:23:49,379 - playerRoxo - INFO - random fortify player ROXO (3) - reserve 3
+2023-09-12 23:23:49,380 - playerRoxo - INFO - player ROXO (3) has no continent reserve
+2023-09-12 23:23:49,380 - playerRoxo - INFO - Reserva: 3 - Territorio: Territory.VIETNA - Fortificar: 1
+2023-09-12 23:23:49,380 - playerRoxo - INFO - Reserva: 2 - Territorio: Territory.ALASKA - Fortificar: 1
+2023-09-12 23:23:49,381 - playerRoxo - INFO - Reserva: 1 - Territorio: Territory.MADAGASCAR - Fortificar: 1
+2023-09-12 23:23:49,381 - playerRoxo - INFO - performance perform_fortify 2.5 ms
+2023-09-12 23:23:49,382 - playerRoxo - INFO - performing action vector len 47
+2023-09-12 23:23:49,384 - playerRoxo - INFO - retorno perform_action_vector None
+2023-09-12 23:25:17,317 - playerRoxo - INFO - doig step for game turn 6 - round 1 - Current phase 1
+2023-09-12 23:25:17,319 - playerRoxo - INFO - Fortificar aleatoriamente: 
+2023-09-12 23:25:17,319 - playerRoxo - INFO - Fortificar aleatoriamente: 
+2023-09-12 23:25:17,319 - playerRoxo - INFO - random fortify player ROXO (3) - reserve 3
+2023-09-12 23:25:17,319 - playerRoxo - INFO - player ROXO (3) has no continent reserve
+2023-09-12 23:25:17,320 - playerRoxo - INFO - Reserva: 3 - Territorio: Territory.INDIA - Fortificar: 1
+2023-09-12 23:25:17,320 - playerRoxo - INFO - Reserva: 2 - Territorio: Territory.MONGOLIA - Fortificar: 1
+2023-09-12 23:25:17,320 - playerRoxo - INFO - Reserva: 1 - Territorio: Territory.MADAGASCAR - Fortificar: 1
+2023-09-12 23:25:17,321 - playerRoxo - INFO - performance perform_fortify 2.0 ms
+2023-09-12 23:25:17,321 - playerRoxo - INFO - performing action vector len 47
+2023-09-12 23:25:17,323 - playerRoxo - INFO - retorno perform_action_vector None

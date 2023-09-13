@@ -3,6 +3,7 @@ import networkx as nx
 import random
 import math
 from collections import defaultdict
+
 class JugadorGrafoOptimizado(Jugador):
     def __init__(self, nombre, color, mision):
         super().__init__(nombre, color, mision)
@@ -507,4 +508,5 @@ class JugadorGrafoOptimizado(Jugador):
             print(f"Mover {tropas} tropas de {origen} a {destino}.")
 
 
-
+    def step():
+        None

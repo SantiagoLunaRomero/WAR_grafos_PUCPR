@@ -1,0 +1,22 @@
+2023-09-12 23:23:48,056 - playerVerde - INFO - doig step for game turn 2 - round 1 - Current phase 1
+2023-09-12 23:23:48,058 - playerVerde - INFO - Fortificar aleatoriamente: 
+2023-09-12 23:23:48,058 - playerVerde - INFO - Fortificar aleatoriamente: 
+2023-09-12 23:23:48,059 - playerVerde - INFO - random fortify player VERDE (2) - reserve 3
+2023-09-12 23:23:48,059 - playerVerde - INFO - player VERDE (2) has no continent reserve
+2023-09-12 23:23:48,060 - playerVerde - INFO - Reserva: 3 - Territorio: Territory.MONGOLIA - Fortificar: 1
+2023-09-12 23:23:48,060 - playerVerde - INFO - Reserva: 2 - Territorio: Territory.ORIENTE_MEDIO - Fortificar: 1
+2023-09-12 23:23:48,061 - playerVerde - INFO - Reserva: 1 - Territorio: Territory.NEW_YORK - Fortificar: 1
+2023-09-12 23:23:48,061 - playerVerde - INFO - performance perform_fortify 2.5 ms
+2023-09-12 23:23:48,062 - playerVerde - INFO - performing action vector len 47
+2023-09-12 23:23:48,064 - playerVerde - INFO - retorno perform_action_vector None
+2023-09-12 23:25:16,863 - playerVerde - INFO - doig step for game turn 5 - round 1 - Current phase 1
+2023-09-12 23:25:16,865 - playerVerde - INFO - Fortificar aleatoriamente: 
+2023-09-12 23:25:16,865 - playerVerde - INFO - Fortificar aleatoriamente: 
+2023-09-12 23:25:16,865 - playerVerde - INFO - random fortify player VERDE (2) - reserve 3
+2023-09-12 23:25:16,865 - playerVerde - INFO - player VERDE (2) has no continent reserve
+2023-09-12 23:25:16,866 - playerVerde - INFO - Reserva: 3 - Territorio: Territory.INGLATERRA - Fortificar: 1
+2023-09-12 23:25:16,866 - playerVerde - INFO - Reserva: 2 - Territorio: Territory.MEXICO - Fortificar: 1
+2023-09-12 23:25:16,866 - playerVerde - INFO - Reserva: 1 - Territorio: Territory.GROELANDIA - Fortificar: 1
+2023-09-12 23:25:16,866 - playerVerde - INFO - performance perform_fortify 1.5 ms
+2023-09-12 23:25:16,867 - playerVerde - INFO - performing action vector len 47
+2023-09-12 23:25:16,869 - playerVerde - INFO - retorno perform_action_vector None
