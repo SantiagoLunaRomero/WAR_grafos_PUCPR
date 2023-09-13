@@ -96,21 +96,17 @@ while True:
         
         print('gamestate matrix', gamestate_matrix[5])
         
-        if (game.current_phase_index == GamePhase.ATTACK.value):
-            pass_vector=[0] * 47
-            pass_vector[3] = 255
-            game.perform_action_vector(pass_vector)
+        
+        action_vector = Jugador_puc.step(gamestate_matrix, player_index=5, tablero=tablero)
+        print('phase index ', game.current_phase_index)
+        #pulando fase de ataque
+        
+        if (game.current_phase_index == GamePhase.SHIFT.value):
+            print('varios vetores de acao retorna pelo deslocar do Jugador')
+            for action in action_vector:
+                game.perform_action_vector(action)
         else:
-            action_vector = Jugador_puc.step(gamestate_matrix, player_index=5, tablero=tablero)
-            print('phase index ', game.current_phase_index)
-            #pulando fase de ataque
-            
-            if (game.current_phase_index == GamePhase.SHIFT.value):
-                print('varios vetores de acao retorna pelo deslocar do Jugador')
-                for action in action_vector:
-                    game.perform_action_vector(action)
-            else:
-                game.perform_action_vector(action_vector)
+            game.perform_action_vector(action_vector)
         input("Press Enter to continue...")
     else:
        agents_list[game.current_player_index].step()

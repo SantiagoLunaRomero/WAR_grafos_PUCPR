@@ -14,7 +14,7 @@ class BoardController:
     #Territory Methods
     def player_own_territory(self, player_enum, territory_enum):
         if (territory_enum == None):
-            self.logger.debug("territory_enum is None")
+            self.logger.error("territory_enum is None")
             return False
         if(territory_enum in self.territory_player_dict):
             if(self.territory_player_dict[territory_enum] == player_enum):

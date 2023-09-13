@@ -107,9 +107,12 @@ class GameController:
 
     def update_gamestate_matrix(self):
         gamestate_matrix = []
+        self.logger.debug('updating matrix...')
         for player in Player:
             #adiciona as informacoes de territorio
             player_vector = []
+            if(player == Player.CINZA):
+                self.logger.debug('Player cinza army {0}'.format(self.board_controller.get_player_territories_army_vector(player)))
             player_vector.extend(self.board_controller.get_player_territories_army_vector(player))
             player_vector.extend(self.player_controller.get_player_gamestate_vector(player))
             #adiciona informacao fase do jogo
@@ -251,7 +254,7 @@ class GameController:
         self.logger.info(f"Next phase is {GamePhase(self.current_phase_index)} for player {Player(self.current_player_index)}")
         self.init_phase()
 
-    def perform_attack(self, attacking_territory_enum=None, defending_territory_enum=None, num_armies_move=None, pass_phase=False):
+    def perform_attack(self, attacking_territory_enum=None, defending_territory_enum=None, num_armies_move=1, pass_phase=False):
         if (pass_phase):
             self.logger.debug('Attack --- Passing phase')
             self.next_phase()
@@ -302,11 +305,14 @@ class GameController:
             self.logger.info('CONQUERED - Player {0}  territory {1}'.format(Player(self.current_player_index), defending_territory_enum))
             self.board_controller.remove_player_territory(defending_territory_enum)
             get_n_movable_army_attack_territory = attack_territory_army - attacking_territory_lost_army
-            if(num_armies_move > get_n_movable_army_attack_territory):
+
+            if (num_armies_move == None or num_armies_move <= 0):
+                num_armies_move = 1
+            elif(num_armies_move > get_n_movable_army_attack_territory):
                 num_armies_move = get_n_movable_army_attack_territory
+            
             self.board_controller.add_player_territory(Player(self.current_player_index), defending_territory_enum, num_armies_move)
             self.board_controller.remove_arm_territory(attacking_territory_enum, num_armies_move)
-            
             
             defending_player_n_territories = self.board_controller.get_player_n_territories(defending_territory_player)
             if (defending_player_n_territories == 0):
