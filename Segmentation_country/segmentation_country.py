@@ -45,5 +45,5 @@ img_path = "Segmentation_country\war_img_ (23).png"
 masks = predict_masks(model_path, img_path)
 
 # Visualizar una de las máscaras (cambia la clave para visualizar diferentes máscaras)
-plt.imshow(masks["alaska"]*255, cmap='gray')
+plt.imshow(masks["mexico"]*255, cmap='gray')
 plt.show()
