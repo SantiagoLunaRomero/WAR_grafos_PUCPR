@@ -9,8 +9,11 @@ def predict_masks(model_path, img_path):
     
     # Leer y procesar la imagen
     img = cv2.imread(img_path)
+    print(img_path)
+    plt.imshow(img)
     input_shape = (320, 608, 3)
-    img_resized = cv2.resize(img, (input_shape[1], input_shape[0]))/ 255
+    #/255 com imagenet e sem /255 com mobilenet
+    img_resized = cv2.resize(img, (input_shape[1], input_shape[0])) 
     img_preprocessed = np.array([img_resized])
     
     # Obtener la predicción del modelo
@@ -36,10 +39,15 @@ def predict_masks(model_path, img_path):
     return masks_dict
 
 # Ejemplo de uso:
-model_path = "Segmentation_country\DA_mobilenetv2_300_.h5"
-img_path = "Segmentation_country\war_img_ (23).png"
+model_path = ".\mobilenetv2_3000_.h5"
+img_path = "teste.jpg"
 masks = predict_masks(model_path, img_path)
 
 # Visualizar una de las máscaras (cambia la clave para visualizar diferentes máscaras)
-plt.imshow(masks["mexico"]*255, cmap='gray')
-plt.show()
+#plt.imshow(masks["mexico"]*255, cmap='gray')
+#plt.show()
+
+for mask in masks:
+    print(mask)
+    plt.imshow(masks[mask]*255, cmap='gray')
+    plt.show()
