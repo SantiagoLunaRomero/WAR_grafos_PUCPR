@@ -187,8 +187,6 @@ class GameController:
             player_n_territories = self.board_controller.get_player_n_territories(Player(self.current_player_index))
             new_troop = int(player_n_territories/2)
             given_reserve = 3 if new_troop < 3 else new_troop
-            if (self.current_player_index == Player.CINZA.value):
-                given_reserve = 20
             self.logger.debug('init_phase {0} reserve {1}'.format(Player(self.current_player_index), given_reserve))
             self.player_controller.set_player_reserve(Player(self.current_player_index), given_reserve)
             self.board_controller.update_player_continents(Player(self.current_player_index))
