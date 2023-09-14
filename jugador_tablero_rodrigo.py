@@ -32,7 +32,7 @@ fh.setFormatter(formatter)
 game.logger.addHandler(fh)
 
 
-game.start_game(6)
+game.start_game(5)
 
 def print_gamestate():
     for linha in game.get_gamestate_matrix():
@@ -65,9 +65,9 @@ agents_list.append(agent)
 agent = dumb_agent_vector(game, 0.1, 0.0, 0.9, f'playerRoxo')
 agents_list.append(agent)
 #Amarelo
-agent = dumb_agent_vector(game, 0.05, 0.0, 0.9, f'playerAmarelo')
-agents_list.append(agent)
-#Cinza
+# agent = dumb_agent_vector(game, 0.05, 0.0, 0.9, f'playerAmarelo')
+# agents_list.append(agent)
+# #Cinza
 matriz = game.get_gamestate_matrix()
 print(matriz[5])
 cinza_objectivo = np.argmax(matriz[5][-18:-4])

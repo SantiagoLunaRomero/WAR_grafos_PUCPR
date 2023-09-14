@@ -109,19 +109,22 @@ class GameController:
         gamestate_matrix = []
         self.logger.debug('updating matrix...')
         for player in Player:
-            #adiciona as informacoes de territorio
-            player_vector = []
-            if(player == Player.CINZA):
-                self.logger.debug('Player cinza army {0}'.format(self.board_controller.get_player_territories_army_vector(player)))
-            player_vector.extend(self.board_controller.get_player_territories_army_vector(player))
-            player_vector.extend(self.player_controller.get_player_gamestate_vector(player))
-            #adiciona informacao fase do jogo
-            for phase in GamePhase:
-                if(phase.value == self.current_phase_index and player.value == self.current_player_index):
-                    player_vector.append(255)
-                else:
-                    player_vector.append(0)
-            gamestate_matrix.append(player_vector)
+            if (player not in self.player_controller.players):
+                empty_player_vector = [0] * 69
+                gamestate_matrix.append(empty_player_vector)
+            else:
+                player_vector = []
+                if(player == Player.CINZA):
+                    self.logger.debug('Player cinza army {0}'.format(self.board_controller.get_player_territories_army_vector(player)))
+                player_vector.extend(self.board_controller.get_player_territories_army_vector(player))
+                player_vector.extend(self.player_controller.get_player_gamestate_vector(player))
+                #adiciona informacao fase do jogo
+                for phase in GamePhase:
+                    if(phase.value == self.current_phase_index and player.value == self.current_player_index):
+                        player_vector.append(255)
+                    else:
+                        player_vector.append(0)
+                gamestate_matrix.append(player_vector)
         self.gamestate_matrix = gamestate_matrix
         return gamestate_matrix
     def print_gamestate_matrix(self):
@@ -217,7 +220,7 @@ class GameController:
             self.player_n_territories_before_attack_dict[Player(self.current_player_index)] = self.board_controller.get_player_n_territories(Player(self.current_player_index))
             self.current_phase_index = GamePhase.ATTACK.value
             if ( self.check_objective_accoplished() ):
-                self.logger.info('Player {0} won the game'.format(Player(self.current_player_index)))
+                self.logger.debug('Player {0} won the game'.format(Player(self.current_player_index)))
                 self.winner = Player(self.current_player_index)
                 self.current_phase_index = GamePhase.NONE.value
                 return True
@@ -225,20 +228,20 @@ class GameController:
         elif (self.current_phase_index == GamePhase.ATTACK.value):
             if(self.board_controller.get_player_n_territories(Player(self.current_player_index)) > self.player_n_territories_before_attack_dict[Player(self.current_player_index)]):
                 self.round_counter += 1
-                self.logger.info('Player {0} conquistou mais que um territorio, ganhou carta territorio'.format(Player(self.current_player_index)))
+                self.logger.debug('Player {0} conquistou mais que um territorio, ganhou carta territorio'.format(Player(self.current_player_index)))
                 self.player_controller.add_territory_card(Player(self.current_player_index), self.territory_card_deck.draw_card())
             self.current_phase_index = GamePhase.SHIFT.value
         
         elif (self.current_phase_index == GamePhase.SHIFT.value):
             if ( self.check_objective_accoplished() ):
-                self.logger.info('Player {0} won the game'.format(Player(self.current_player_index)))
+                self.logger.debug('Player {0} won the game'.format(Player(self.current_player_index)))
                 self.winner = Player(self.current_player_index)
                 self.current_phase_index = GamePhase.NONE.value
                 return True
             
             self.current_player_index = (self.current_player_index + 1) % self.players_length
             if (Player(self.current_player_index) in self.player_controller.eliminated_players):
-                self.logger.info('Player {0} esta eliminado, avancando proximo jogador...'.format(Player(self.current_player_index)))
+                self.logger.debug('Player {0} esta eliminado, avancando proximo jogador...'.format(Player(self.current_player_index)))
                 for i in range(0, self.players_length):
                     self.current_player_index = (self.current_player_index + 1) % self.players_length
                     if (Player(self.current_player_index) not in self.player_controller.eliminated_players):
