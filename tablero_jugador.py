@@ -153,6 +153,7 @@ class Tablero:
 
         # Check if the country belongs to the player
         if self.paises[pais_nombre].jugador != jugador:
+            print("No puedes reforzar no le paertence al jugador")
             return False, "El país no pertenece al jugador."
         
         # Check if the player has enough troops to assign

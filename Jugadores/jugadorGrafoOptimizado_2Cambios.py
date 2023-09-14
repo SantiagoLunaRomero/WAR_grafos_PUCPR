@@ -60,7 +60,6 @@ class JugadorGrafoOptimizado(Jugador):
         for _ in range(self.tropas_por_turno):
             recompensa_actual = self.calcular_recompensa_mision(tablero, self.mision.descripcion) * (1 + self.turnos_jugados * 0.05)  # La recompensa aumenta con los turnos
             paises_evaluados = self.evaluar_paises(tablero, recompensa_actual)
-            
             # Ordenamos los países por sus puntuaciones de evaluación
             paises_ordenados = sorted(paises_evaluados, key=paises_evaluados.get, reverse=True)
             
@@ -69,21 +68,27 @@ class JugadorGrafoOptimizado(Jugador):
                 vecinos_enemigos = [tablero.paises[vecino] for vecino in pais_a_reforzar.vecinos if tablero.paises[vecino].jugador != self]
                 
                 # Si el país ya tiene una ventaja significativa sobre todos sus vecinos enemigos, considera el siguiente país
-                if all(pais_a_reforzar.tropas > vecino.tropas * 1.25 for vecino in vecinos_enemigos):
+                if all(pais_a_reforzar.tropas > vecino.tropas * 10 for vecino in vecinos_enemigos):
                     continue
                 else:
                     #print("reforzando pais :",pais_a_reforzar.get_nombre())
-                    tablero.reforzar_pais(pais_a_reforzar.nombre, 1, self)
-                    refuerzos[pais_a_reforzar.nombre] += 1 
-                    break
+                    result = tablero.reforzar_pais(pais_a_reforzar.nombre, 1, self)
+                    print(result)
+                    if result[0]:
+                        refuerzos[pais_a_reforzar.nombre] += 1
+                        print("Dueno del pais:",pais_a_reforzar.jugador)
+                        break
+                    else :
+                        continue
             else:
                 # Si todos los países ya tienen una ventaja significativa, simplemente reforzamos el país originalmente elegido
-                print(paises_evaluados)
                 pais_a_reforzar = max(paises_evaluados, key=paises_evaluados.get)
                 #print("reforzando pais :",pais_a_reforzar.get_nombre())
-                tablero.reforzar_pais(pais_a_reforzar.nombre, 1, self)
-                refuerzos[pais_a_reforzar.nombre] += 1 
-        
+                result =tablero.reforzar_pais(pais_a_reforzar.nombre, 1, self)
+                if result[0]:
+                    refuerzos[pais_a_reforzar.nombre] += 1
+                    print("Dueno del pais:",pais_a_reforzar.jugador)
+
         vector=[0] * 47
         nombres = list(tablero.paises.keys())
         vector[0:5]=[0,255,0,0,0]
@@ -510,11 +515,12 @@ class JugadorGrafoOptimizado(Jugador):
                         break  # Si hay un error, detenemos el intento de mover más tropas desde ese vecino
                 paises_donados.add(vecino.nombre)
 
-        vector=[0] * 47
+       
         nombres = list(tablero.paises.keys())
         print("Resumen de movimientos:")
         action_vectors = []
         for (origen, destino), tropas in movimientos.items():
+            vector=[0] * 47
             vector[0:5]=[0,0,255,0,tropas]
             print(f"Mover {tropas} tropas de {origen} a {destino}.")
             indice = nombres.index(origen)
@@ -522,8 +528,10 @@ class JugadorGrafoOptimizado(Jugador):
             indice = nombres.index(destino)
             vector[indice + 5] = 255
             action_vectors.append(vector)
+            print(vector)
             
         if (len(action_vectors) == 0):
+            vector=[0] * 47
             vector[0:5]=[0,0,0,255,0]
             print(f"No se movieron tropas")
             action_vectors.append(vector)
@@ -539,8 +547,11 @@ class JugadorGrafoOptimizado(Jugador):
 
         #Reforzar
         if(fase_jogo[1] == 255):
+            print("Mis pasies son : ")
+            self.imprimir_paises()
+            self.actualizar_tropas_por_turno()
+            self.iniciar_turno()
             action_vector = self.reforzar(tablero)
-            self.turnos_jugados+=1
             return action_vector
         #Atacar
         elif(fase_jogo[2] == 255):
@@ -549,6 +560,7 @@ class JugadorGrafoOptimizado(Jugador):
         #Mover
         elif(fase_jogo[3] == 255):
             action_vector = self.mover_tropas(tablero)
+            tablero.reset_tropas_recibidas()
             return action_vector
         #Fortificar
         elif(fase_jogo[0] == 255):

@@ -102,8 +102,6 @@ while True:
         Jugador_puc.interpretar_mision(misiones[cinza_objectivo])
         Jugador_puc.mision = misiones[cinza_objectivo]
         Jugador_puc.descripcion = misiones[cinza_objectivo].descripcion
-        print(Jugador_puc.descripcion)
-
 
         action_vector = Jugador_puc.step(gamestate_matrix, player_index=5, tablero=tablero)
         print('phase index ', game.current_phase_index)
