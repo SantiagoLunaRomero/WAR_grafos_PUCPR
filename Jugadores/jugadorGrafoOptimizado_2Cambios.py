@@ -68,7 +68,7 @@ class JugadorGrafoOptimizado(Jugador):
                 vecinos_enemigos = [tablero.paises[vecino] for vecino in pais_a_reforzar.vecinos if tablero.paises[vecino].jugador != self]
                 
                 # Si el país ya tiene una ventaja significativa sobre todos sus vecinos enemigos, considera el siguiente país
-                if all(pais_a_reforzar.tropas > vecino.tropas * 10 for vecino in vecinos_enemigos):
+                if all(pais_a_reforzar.tropas > vecino.tropas * 1.25 for vecino in vecinos_enemigos):
                     continue
                 else:
                     #print("reforzando pais :",pais_a_reforzar.get_nombre())
@@ -91,7 +91,7 @@ class JugadorGrafoOptimizado(Jugador):
 
         vector=[0] * 47
         nombres = list(tablero.paises.keys())
-        vector[0:5]=[0,255,0,0,0]
+        vector[0:5]=[0,255,0,0,255]
         # Imprimir un resumen de los refuerzos al final
         for pais, cantidad in refuerzos.items():
             print(f"Reforzado el país {pais} con {cantidad} tropas.")
@@ -115,7 +115,7 @@ class JugadorGrafoOptimizado(Jugador):
         paises_cercano_objetivo = self.identificar_paises_cercanos_a_objetivos(tablero)
 
         for pais in self.paises:
-            puntuaciones[pais] = 10 * factor_mision if pais in paises_cercano_objetivo else 0
+            puntuaciones[pais] = 20 * factor_mision if pais in paises_cercano_objetivo else 0
 
         # Ajustar puntuaciones por conectividad y potencial estratégico
         for pais in self.paises:
@@ -139,13 +139,13 @@ class JugadorGrafoOptimizado(Jugador):
             vecino = [vec for vec in pais.vecinos if tablero.paises[vec].jugador != self and tablero.paises[vec].tropas < pais.tropas * 0.75]
             if vecino:
                 # Usa el método get() para obtener el valor actual o un valor predeterminado si la clave no existe
-                puntuaciones[pais] = puntuaciones.get(pais, 0) + 5
+                puntuaciones[pais] = puntuaciones.get(pais, 0) + 10
 
         # Ajustar puntuaciones por defensa en las etapas posteriores del juego
         if self.turnos_jugados > 5:  # Esto es solo un ejemplo; puedes ajustar el número de turnos según lo que consideres una "etapa posterior"
             paises_frontera = [pais for pais in self.paises if any(tablero.paises[vecino].jugador != self for vecino in pais.vecinos)]
             for pais in paises_frontera:
-                puntuaciones[pais] += 3
+                puntuaciones[pais] += 5
         
         # Ajustar por recompensa actual
         for pais in puntuaciones:
@@ -319,7 +319,7 @@ class JugadorGrafoOptimizado(Jugador):
         mejor_ataque = None
         for ataque in ataques_ordenados:
             origen, destino = ataque
-            if origen.tropas > destino.tropas*2:
+            if origen.tropas > (destino.tropas+2)*1.25:
                 mejor_ataque = ataque
                 break
 
@@ -370,12 +370,12 @@ class JugadorGrafoOptimizado(Jugador):
                     # Base: diferencia de tropas
                     puntuacion = pais.tropas - vecino.tropas
                     # Durante los primeros turnos, se prioriza la expansión rápida
-                    if self.turnos_jugados < 3:
-                        puntuacion += 50 if vecino.tropas < pais.tropas else 0
+                    if self.turnos_jugados < 10:
+                        puntuacion += 70 if vecino.tropas < pais.tropas else 0
                     else:
                         # Bonificación por conquistar un continente
                         if self.es_conquista_continente(tablero, vecino):
-                            puntuacion += 20
+                            puntuacion += 30
 
                         # Bonificación por ataque a países vulnerables
                         if vecino.tropas < pais.tropas * 0.5:
@@ -383,11 +383,11 @@ class JugadorGrafoOptimizado(Jugador):
                         
                         # Penalización por ataque a países fuertemente defendidos
                         elif vecino.tropas > pais.tropas:
-                            puntuacion -= 20
+                            puntuacion -= 30
 
                         # Bonificación si el vecino bloquea una ruta de suministro/movimiento
                         if self.bloquea_ruta(tablero, vecino):
-                            puntuacion += 20
+                            puntuacion += 30
 
                         # Bonificación si el vecino es un objetivo según la misión
                         if vecino in paises_objetivo:
