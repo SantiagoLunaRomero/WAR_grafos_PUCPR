@@ -31,7 +31,10 @@ class JugadorGrafoOptimizado(Jugador):
         if 'Europa' in self.objetivos['continentes'] and 'Oceanía' in self.objetivos['continentes']:
             self.objetivos['tercero'] = True
             print("Es neceseario tambien un continente extra : ")
-
+        if 'Europa' in self.objetivos['continentes'] and 'América del Sur' in self.objetivos['continentes']:
+            self.objetivos['tercero'] = True
+            print("Es neceseario tambien un continente extra : ")
+        
         # Interpretar la misión de conquistar 18 territorios con al menos dos ejércitos
         if "Conquistar 18 TERRITÓRIOS" in descripcion:
             self.objetivos['territorios'] = 18
@@ -68,7 +71,7 @@ class JugadorGrafoOptimizado(Jugador):
                 vecinos_enemigos = [tablero.paises[vecino] for vecino in pais_a_reforzar.vecinos if tablero.paises[vecino].jugador != self]
                 
                 # Si el país ya tiene una ventaja significativa sobre todos sus vecinos enemigos, considera el siguiente país
-                if all(pais_a_reforzar.tropas > vecino.tropas * 1.25 for vecino in vecinos_enemigos):
+                if all(pais_a_reforzar.tropas > vecino.tropas * 3.25 for vecino in vecinos_enemigos):
                     continue
                 else:
                     #print("reforzando pais :",pais_a_reforzar.get_nombre())
@@ -190,7 +193,10 @@ class JugadorGrafoOptimizado(Jugador):
                             and pais.continente not in continentes_conquistados]
             
             if hasattr(self.objetivos, 'tercero') and self.objetivos['tercero']:
-                continentes = ['América del Norte', 'América del Sur', 'África', 'Asia']
+                if 'América del Sur' in self.objetivos['continentes']:
+                    continentes = ['América del Norte', 'Oceanía', 'África', 'Asia']
+                else:
+                    continentes = ['América del Norte', 'América del Sur', 'África', 'Asia']
                 pais_count_por_continente = {continente: sum(1 for pais in self.paises if pais.continente == continente) for continente in continentes}
                 tercer_continente = max(pais_count_por_continente, key=pais_count_por_continente.get)
                 paises_tercer_continente = [pais for pais in tablero.paises.values() if pais.continente == tercer_continente and pais.jugador != self]
@@ -284,11 +290,23 @@ class JugadorGrafoOptimizado(Jugador):
         # Tomamos la recompensa máxima de los demás continentes
         max_recompensa_otro_continente = max(recompensas_otros)
         return (recompensa_europa + recompensa_oceania + max_recompensa_otro_continente) / 3
+    def recompensa_por_mision_europa_ameria_sure_tercero(self, tablero):
+        recompensa_europa = self.recompensa_por_conquista_continente(tablero, 'Europa')
+        recompensa_oceania = self.recompensa_por_conquista_continente(tablero, 'América del Sur')
+        # Lista de todos los continentes excepto Europa y Oceanía
+        otros_continentes = ['Asia', 'Oceanía', 'África', 'América del Norte']
+        recompensas_otros = [self.recompensa_por_conquista_continente(tablero, continente) for continente in otros_continentes]
+        # Tomamos la recompensa máxima de los demás continentes
+        max_recompensa_otro_continente = max(recompensas_otros)
+        return (recompensa_europa + recompensa_oceania + max_recompensa_otro_continente) / 3
+    
 
     def calcular_recompensa_mision(self, tablero, descripcion):
         # Misiones cuando es "Conquistar na totalidade a Europa, a Oceanía e mais um terceiro"
         if "Conquistar na totalidade a Europa, a Oceanía e mais um terceiro" in descripcion:
             return self.recompensa_por_mision_europa_oceania_tercero(tablero)
+        elif "Conquistar na totalidade a Europa e a América del Sur" in descripcion:
+            return self.recompensa_por_mision_europa_ameria_sure_tercero(tablero)
         # Misiones de conquista de continentes
         elif any(cont in descripcion for cont in ['Europa', 'Oceanía', 'Asia', 'América del Sur', 'África', 'América del Norte']):
             continentes_mencionados = [cont for cont in ['Europa', 'Oceanía', 'Asia', 'América del Sur', 'África', 'América del Norte'] if cont in descripcion]
@@ -370,7 +388,7 @@ class JugadorGrafoOptimizado(Jugador):
                     # Base: diferencia de tropas
                     puntuacion = pais.tropas - vecino.tropas
                     # Durante los primeros turnos, se prioriza la expansión rápida
-                    if self.turnos_jugados < 10:
+                    if self.turnos_jugados < 5:
                         puntuacion += 70 if vecino.tropas < pais.tropas else 0
                     else:
                         # Bonificación por conquistar un continente
@@ -378,8 +396,8 @@ class JugadorGrafoOptimizado(Jugador):
                             puntuacion += 30
 
                         # Bonificación por ataque a países vulnerables
-                        if vecino.tropas < pais.tropas * 0.5:
-                            puntuacion += 30
+                        if vecino.tropas < pais.tropas * 0.85:
+                            puntuacion += 40
                         
                         # Penalización por ataque a países fuertemente defendidos
                         elif vecino.tropas > pais.tropas:
@@ -391,7 +409,7 @@ class JugadorGrafoOptimizado(Jugador):
 
                         # Bonificación si el vecino es un objetivo según la misión
                         if vecino in paises_objetivo:
-                            puntuacion += 50
+                            puntuacion += 30
 
                     puntuaciones_ataque[(pais, vecino)] = puntuacion
 
@@ -501,7 +519,7 @@ class JugadorGrafoOptimizado(Jugador):
             for vecino in vecinos_donantes:
                 tropas_a_mover = vecino.tropas_disponibles_para_mover()
                 if "territorios" in self.objetivos:  # Si el objetivo es conquistar territorios
-                    tropas_a_mover = max(0, tropas_a_mover - 2)  # Nunca mover más de lo que dejaría al país con menos de dos tropas
+                    tropas_a_mover = max(0, tropas_a_mover - 1)  # Nunca mover más de lo que dejaría al país con menos de dos tropas
                 
                 while tropas_a_mover > 0:
                     try:
