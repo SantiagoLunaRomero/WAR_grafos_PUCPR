@@ -42,6 +42,9 @@ def print_gamestate():
 def print_gamestatus():
     print(game.get_game_info())
 
+
+    
+
 #print_gamestate()
 print_gamestatus()
 
