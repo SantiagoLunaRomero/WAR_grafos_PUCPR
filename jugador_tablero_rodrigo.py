@@ -51,18 +51,20 @@ print_gamestatus()
 
 agents_list = []
 #Azul
-agent = simple_agent_vector(game, 0.8, 0.0, 0.0, f'playerCinza', 
-                            smart_attack=True, smart_fortify=True, smart_fortify_surplus=6, smart_shift=True)
+agent = dumb_agent_vector(game, 0.1, 0.0, 0.9, f'playerAzul')
 #agent = dumb_agent_vector(game, 0.1, 0.0, 0.2, f'playerCinza')
 agents_list.append(agent)
 #Vermelho
-agent = dumb_agent_vector(game, 0.1, 0.0, 0.2, f'playerVermelho')
+agent = simple_agent_vector(game, 0.8, 0.0, 0.0, f'playerVermelho', 
+                            smart_attack=True, smart_fortify=True, smart_fortify_surplus=6, smart_shift=True)
 agents_list.append(agent)
 #Verde
-agent = dumb_agent_vector(game, 0.1, 0.0, 0.8, f'playerVerde') #0.1, 0.0, 0.8 boa config
+agent = simple_agent_vector(game, 0.8, 0.0, 0.0, f'playerVerde', 
+                            smart_attack=True, smart_fortify=True, smart_fortify_surplus=6, smart_shift=True)
 agents_list.append(agent)
 #Roxo
-agent = dumb_agent_vector(game, 0.1, 0.0, 0.9, f'playerRoxo')
+agent = simple_agent_vector(game, 0.8, 0.0, 0.0, f'playerRoxo', 
+                            smart_attack=True, smart_fortify=True, smart_fortify_surplus=6, smart_shift=True)
 agents_list.append(agent)
 #Amarelo
 # agent = dumb_agent_vector(game, 0.05, 0.0, 0.9, f'playerAmarelo')
@@ -73,7 +75,7 @@ print(matriz[5])
 cinza_objectivo = np.argmax(matriz[5][-18:-4])
 print(cinza_objectivo)
 colores = ["blue","red","green","purple","yellow","black"]
-Jugador_puc = JugadorGrafoOptimizado("JOGADOR_PUCPR_IA", colores[0], misiones[cinza_objectivo])
+Jugador_puc = JugadorGrafoOptimizado("JOGADOR_PUCPR_IA", colores[4], misiones[cinza_objectivo])
 
 agents_list.append(agent)
 
@@ -84,29 +86,30 @@ mision_desconocida = [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 jugador1 = Jugador("1",colores[1],mision_desconocida)
 jugador2 = Jugador("2",colores[2],mision_desconocida)
 jugador3 = Jugador("3",colores[3],mision_desconocida)
-jugador4 = Jugador("4",colores[4],mision_desconocida)
+jugador4 = Jugador("4",colores[0],mision_desconocida)
 jugador5 = Jugador("5",colores[5],mision_desconocida)
 
-jugadores = [Jugador_puc,jugador1,jugador2,jugador3,jugador4,jugador5]
+jugadores = [Jugador_puc,jugador1,jugador2,jugador3,jugador4]
 tablero = Tablero(jugadores)
 
 
 steps = 0
 
 while True:
+    print("Fase Jogo :",game.current_phase_index)
     previous_game_phase = game.current_phase_index
     gamestate_matrix = game.get_gamestate_matrix()
     tablero.actualizarmatriz(gamestate_matrix)
 
-    if(game.current_player_index == 0):
-        print('gamestate matrix', gamestate_matrix[5])
+    if(game.current_player_index == 4):
+        print('gamestate matrix', gamestate_matrix[4])
         matriz = game.get_gamestate_matrix()
-        cinza_objectivo = np.argmax(matriz[5][-18:-4])
+        cinza_objectivo = np.argmax(matriz[4][-18:-4])
         Jugador_puc.interpretar_mision(misiones[cinza_objectivo])
         Jugador_puc.mision = misiones[cinza_objectivo]
         Jugador_puc.descripcion = misiones[cinza_objectivo].descripcion
         print(Jugador_puc.descripcion)
-        action_vector = Jugador_puc.step(gamestate_matrix, player_index=0, tablero=tablero)
+        action_vector = Jugador_puc.step(gamestate_matrix, player_index=4, tablero=tablero)
         print('phase index ', game.current_phase_index)
         #pulando fase de ataque
         if (game.current_phase_index == GamePhase.FORTIFY.value):

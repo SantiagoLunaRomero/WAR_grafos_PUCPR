@@ -102,6 +102,7 @@ class JugadorGrafoOptimizado(Jugador):
             vector[indice + 5] = cantidad
         print(vector)
         return vector
+    
     def factor_priorizacion_mision(self):
         # Ajustamos según la necesidad: estos valores determinan cuándo comienza a priorizar la misión
         escala = 0.3
@@ -118,7 +119,7 @@ class JugadorGrafoOptimizado(Jugador):
         paises_cercano_objetivo = self.identificar_paises_cercanos_a_objetivos(tablero)
 
         for pais in self.paises:
-            puntuaciones[pais] = 20 * factor_mision if pais in paises_cercano_objetivo else 0
+            puntuaciones[pais] = 10 * factor_mision if pais in paises_cercano_objetivo else 0
 
         # Ajustar puntuaciones por conectividad y potencial estratégico
         for pais in self.paises:
@@ -142,20 +143,20 @@ class JugadorGrafoOptimizado(Jugador):
             vecino = [vec for vec in pais.vecinos if tablero.paises[vec].jugador != self and tablero.paises[vec].tropas < pais.tropas * 0.75]
             if vecino:
                 # Usa el método get() para obtener el valor actual o un valor predeterminado si la clave no existe
-                puntuaciones[pais] = puntuaciones.get(pais, 0) + 10
+                puntuaciones[pais] = puntuaciones.get(pais, 0) + 5
 
         # Ajustar puntuaciones por defensa en las etapas posteriores del juego
         if self.turnos_jugados > 5:  # Esto es solo un ejemplo; puedes ajustar el número de turnos según lo que consideres una "etapa posterior"
             paises_frontera = [pais for pais in self.paises if any(tablero.paises[vecino].jugador != self for vecino in pais.vecinos)]
             for pais in paises_frontera:
-                puntuaciones[pais] += 5
+                puntuaciones[pais] += 3
         
         # Ajustar por recompensa actual
         for pais in puntuaciones:
             puntuaciones[pais] += recompensa_actual / 100
         
         return puntuaciones
-    
+
     def identificar_paises_cercanos_a_objetivos(self, tablero):
         G = tablero.construir_grafo_con_peso()
         
@@ -388,32 +389,33 @@ class JugadorGrafoOptimizado(Jugador):
                     # Base: diferencia de tropas
                     puntuacion = pais.tropas - vecino.tropas
                     # Durante los primeros turnos, se prioriza la expansión rápida
-                    if self.turnos_jugados < 5:
-                        puntuacion += 70 if vecino.tropas < pais.tropas else 0
+                    if self.turnos_jugados < 3:
+                        puntuacion += 50 if vecino.tropas < pais.tropas else 0
                     else:
                         # Bonificación por conquistar un continente
                         if self.es_conquista_continente(tablero, vecino):
-                            puntuacion += 30
+                            puntuacion += 20
 
                         # Bonificación por ataque a países vulnerables
-                        if vecino.tropas < pais.tropas * 0.85:
-                            puntuacion += 40
+                        if vecino.tropas < pais.tropas * 0.5:
+                            puntuacion += 30
                         
                         # Penalización por ataque a países fuertemente defendidos
                         elif vecino.tropas > pais.tropas:
-                            puntuacion -= 30
+                            puntuacion -= 20
 
                         # Bonificación si el vecino bloquea una ruta de suministro/movimiento
                         if self.bloquea_ruta(tablero, vecino):
-                            puntuacion += 30
+                            puntuacion += 20
 
                         # Bonificación si el vecino es un objetivo según la misión
                         if vecino in paises_objetivo:
-                            puntuacion += 30
+                            puntuacion += 50
 
                     puntuaciones_ataque[(pais, vecino)] = puntuacion
 
         return puntuaciones_ataque
+
 
 
     def interpretar_objetivo_ataque(self, tablero):
