@@ -16,7 +16,11 @@ def predict_masks(model_path, img_path):
     # Obtener la predicción del modelo
     prediction = model.predict(img_preprocessed)
     predicted_mask = prediction[0]
-    
+
+    umbral = 0.4  # Establece el valor de umbral que deseas
+    # Aplica el umbral a la matriz de predicción
+    predicted_mask = (predicted_mask >= umbral).astype(np.uint8)
+
     # Nombres de los países en orden
     countries_order = [
         "alaska", "mackenzie", "groenladia", "vancouver", "ottawa", "labrador",
@@ -41,5 +45,5 @@ img_path = "Segmentation_country\war_img_ (23).png"
 masks = predict_masks(model_path, img_path)
 
 # Visualizar una de las máscaras (cambia la clave para visualizar diferentes máscaras)
-plt.imshow(masks["mexico"]*255, cmap='gray')
+plt.imshow(masks["alaska"]*255, cmap='gray')
 plt.show()
