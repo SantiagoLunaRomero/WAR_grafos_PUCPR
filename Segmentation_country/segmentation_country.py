@@ -90,7 +90,7 @@ class segmentation_country_class():
         
         # Aplica la dilatación para aumentar el ancho de los bordes
         kernel_dilate = np.ones((5, 5), np.uint8)
-        predicted_mask = cv2.dilate(predicted_mask, kernel_dilate, iterations=1)
+        predicted_mask = cv2.dilate(predicted_mask, kernel_dilate, iterations=3)
 
         # Nombres de los países en orden
 
