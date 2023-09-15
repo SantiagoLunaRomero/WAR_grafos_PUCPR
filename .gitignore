@@ -3,3 +3,5 @@
 *.json
 *.png
 *.log
+Segmentation_country/text-recognition-resnet-fc-ft-v1.bin
+Segmentation_country/text-recognition-resnet-fc-ft-v1.xml
