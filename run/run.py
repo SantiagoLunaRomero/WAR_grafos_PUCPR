@@ -7,9 +7,11 @@ import sys
 import cv2
 import os
 import time
-
+import numpy as np
 sys.path.append('../')
 from Segmentation_country.segmentation_country import segmentation_country_class, recognition_class
+from agents.simple_agent_matrix import simple_agent_matrix
+
 
 def get_chrome_printscreen(filename_save):
     # Nombre de la ventana de Google Chrome
@@ -72,16 +74,49 @@ def get_chrome_printscreen(filename_save):
         os.remove(filename)
         return True
 
+def get_player_color(image):
 
+    player_color = ''
+    print('get player color')
+    a2D = image.reshape(-1,image.shape[-1])
+    #remove a2D [0,0,0] items
+    print('a2D shape: ', a2D.shape)
+    time_start = time.time()
+    a2D = a2D[np.all(a2D != [0,0,0], axis=1)] #removendo black pixels
+    #removendo pixels brancos
+    a2D = a2D[np.all(a2D!=[255,255,255], axis=1)]
+    print('a2D pos remocao black pixels e pixels brancos shape: ', a2D.shape)
+    col_range = (256, 256, 256) # generically : a2D.max(0)+1
+    a1D = np.ravel_multi_index(a2D.T, col_range)
+    bgr_format = np.unravel_index(np.bincount(a1D).argmax(), col_range)
+    #sai no formato [Blue, Green, Red] de chances
+    print('cor predominante: ', bgr_format )
+    time_end = time.time()
+    print('time to get color: ', time_end - time_start)
+    cv2.imshow('teste', image)
+    cv2.resizeWindow('teste', 600,600)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
-segmentation_prediction = segmentation_country_class("./DA_3500mobilenetv2.h5")
-ocr = recognition_class()
+    None
+
+segmentation_prediction = segmentation_country_class("./DA_rodrigo_4000_mobilenetv2.h5")
+ocr = recognition_class("text-recognition-resnet-fc-ft-v3-acc.xml","text-recognition-resnet-fc-ft-v3-norm.bin")
 screenshot_filepath = "crop_screenshot_teste.jpg"
+
+
+
+
+agente = simple_agent_matrix()
+
 while(True):
     print('Digite o seu comando: \n')
     print('1 - Tirar printscreen\n')
     print('2 - Tirar printscreen e fazer ocr\n')
+    print('3 - usar jpg teste\n')
+    print('4 - get matrix estado com imagem printscreen\n')
     comando = input('Digite o comando: ')
+    
     os.system('cls')
     if (comando == '1'):
         if (not get_chrome_printscreen(screenshot_filepath)):
@@ -107,8 +142,22 @@ while(True):
             cv2.resizeWindow(item, 600,600)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
+    if (comando == '3'):
+        test_path = 'crop_teste.jpg'
+        masks = segmentation_prediction.predict_masks(screenshot_filepath)
+        for item, mask in masks.items():
+            recog_image = mask.copy()
+            res = ocr.recog_image(recog_image)
+            print("pais: {0} com {1} tropas".format(item, res))
+            if ((mask is None) or (res is None)):
+                print('mask is none')
+                continue
 
 
+            # cv2.imshow(item, mask)
+            # cv2.resizeWindow(item, 600,600)
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
             # cv2.imshow(item, mask)
             # cv2.resizeWindow(item, 600,600)
             # cv2.waitKey(0)
@@ -118,6 +167,21 @@ while(True):
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
 
+    if (comando == '4'):
+        player_dict = {}
+        imgeral = cv2.imread(screenshot_filepath)
+        masks = segmentation_prediction.predict_masks(screenshot_filepath)
+        for item, mask in masks.items():
+            
+            recog_image = mask.copy()
+            color = get_player_color(recog_image)
+            troop = ocr.recog_image(recog_image)
+            
+            print("pais: {0} com {1} tropas".format(item, troop))
+            
+            if ((mask is None) or (troop is None)):
+                print('pais nao identificado')
+                continue
 
 
 # cv_image = cv2.imread("crop_screenshot.jpg")

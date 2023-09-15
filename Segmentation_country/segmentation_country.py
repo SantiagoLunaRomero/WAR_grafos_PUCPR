@@ -6,9 +6,9 @@ from openvino.runtime import Core #pip3 install openvino==2023.0.2
 import time
 
 class recognition_class():
-    def __init__(self):
-        self.model_path = "text-recognition-resnet-fc-ft-v1.xml"
-        self.bin_path = "text-recognition-resnet-fc-ft-v1.bin"
+    def __init__(self, model_path, bin_path):
+        self.model_path = model_path 
+        self.bin_path = bin_path
         self.ie = Core()
         self.recognition_model = self.ie.read_model(
             model=self.model_path, weights=self.bin_path
@@ -113,7 +113,7 @@ class segmentation_country_class():
 
 # segmentation_obj = segmentation_country_class("./DA_3500mobilenetv2.h5")
 # masks = segmentation_obj.predict_masks("war_img.png")
-# ocr = recognition_class()
+# ocr = recognition_class("text-recognition-resnet-fc-ft-v1.xml","text-recognition-resnet-fc-ft-v1.bin")
 
 # # Visualizar una de las máscaras (cambia la clave para visualizar diferentes máscaras)
 # for item, mask in masks.items():
