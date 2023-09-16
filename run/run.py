@@ -155,7 +155,7 @@ def get_player_color(image):
         
         player_color=None
         for key in colores:
-            if (identificar_color(bgr_format, colores[key], 20)):
+            if (identificar_color(bgr_format, colores[key], 25)):
                 player_color = key
                 break
             else:
