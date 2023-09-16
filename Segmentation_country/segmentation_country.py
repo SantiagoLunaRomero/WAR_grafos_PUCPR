@@ -112,8 +112,8 @@ class segmentation_country_class():
         predicted_mask = cv2.morphologyEx(predicted_mask, cv2.MORPH_CLOSE, kernel)
         predicted_mask = cv2.morphologyEx(predicted_mask, cv2.MORPH_CLOSE, kernel)
         # Aplica la operación "opening" para eliminar áreas pequeñas (outliers)
-        kernel_open = np.ones((5, 5), np.uint8)
-        predicted_mask = cv2.morphologyEx(predicted_mask, cv2.MORPH_OPEN, kernel_open)
+        #kernel_open = np.ones((5, 5), np.uint8)
+        #predicted_mask = cv2.morphologyEx(predicted_mask, cv2.MORPH_OPEN, kernel_open)
         
         # Aplica la dilatación para aumentar el ancho de los bordes
         kernel_dilate = np.ones((5, 5), np.uint8)

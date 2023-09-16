@@ -202,7 +202,7 @@ def create_matrix_from_masks(masks, ocr: recognition_class):
 
 
 segmentation_prediction = segmentation_country_class("./DA_rodrigo_4000_mobilenetv2.h5")
-ocr = recognition_class("text-recognition-resnet-fc-ft-v2-norm.xml","text-recognition-resnet-fc-ft-v2-norm.bin")
+ocr = recognition_class("text-recognition-resnet-fc-ft-v3-norm.xml","text-recognition-resnet-fc-ft-v3-norm.bin")
 screenshot_filepath = "crop_screenshot_completo.jpg"
 #CORES  = [  0   ,  1  ,   2   ,    3    ,  4     ,   5  ]
 colores = ["blue","red","green","purple","yellow","black"]
