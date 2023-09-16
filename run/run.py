@@ -257,6 +257,7 @@ while(True):
 
     if (comando == '3'):
         masks = segmentation_prediction.predict_masks(screenshot_filepath)
+        
         dic = create_matrix_from_masks(masks, ocr)
 
         tablero.actualizarFronDic(dic)
