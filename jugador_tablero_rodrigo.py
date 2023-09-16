@@ -125,10 +125,8 @@ while True:
             game.perform_action_vector(action_vector)
         input("Press Enter to continue...")
     else:
-       
        agents_list[game.current_player_index].step()
     steps += 1
-
     if(game.current_phase_index == GamePhase.NONE.value and game.winner != None):
         print("BUGGGGGGGGGGGGG")
         break
@@ -137,8 +135,6 @@ while True:
         game.print_gamestate_matrix()
         game.print_gamestate()
     
-
-
     if(steps > 10000):
         print("Game ended due to too many steps")
         break

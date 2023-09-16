@@ -10,7 +10,52 @@ import time
 import numpy as np
 sys.path.append('../')
 from Segmentation_country.segmentation_country import segmentation_country_class, recognition_class
-from agents.simple_agent_matrix import simple_agent_matrix
+#from agents.simple_agent_matrix import simple_agent_matrix
+from misiones import misiones
+from tablero_jugador import Tablero
+from Jugadores.jugador import Jugador
+from Jugadores.jugadorGrafoOptimizado_2Cambios import JugadorGrafoOptimizado
+
+import math
+from matplotlib import pyplot as plt   
+
+def calcular_diferencia_color(color1, color2):
+    r1, g1, b1 = color1
+    r2, g2, b2 = color2
+
+    diferencia = math.sqrt((r2 - r1)**2 + (g2 - g1)**2 + (b2 - b1)**2)
+    return diferencia
+
+def identificar_color(color_a_identificar, color_referencia, umbral):
+    diferencia = calcular_diferencia_color(color_a_identificar, color_referencia)
+    if diferencia <= umbral:
+        return True
+    else:
+        print(diferencia,umbral)
+        return False
+
+
+# color_a_identificar = (50, 30, 180)  # Cambia estos valores por los del color que quieres identificar
+# color_referencia = (150, 35, 100)
+# umbral = 10  # Puedes ajustar este umbral según lo que consideres una variación pequeña
+
+# resultado = identificar_color(color_a_identificar, color_referencia, umbral)
+# print(resultado)
+# # Ploteo de los colores
+# colores = [color_referencia, color_a_identificar]
+# etiquetas = ['Color de Referencia', 'Color a Identificar']
+
+# plt.figure(figsize=(5, 2))
+# for i in range(len(colores)):
+#     plt.subplot(1, 2, i+1)
+#     plt.imshow([[colores[i]]])
+#     plt.axis('off')
+#     plt.title(etiquetas[i])
+
+# plt.show()
+# sys.exit()
+
+
 
 
 def get_chrome_printscreen(filename_save):
@@ -71,50 +116,110 @@ def get_chrome_printscreen(filename_save):
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
         cv2.imwrite(filename_save, crop_image)
-        os.remove(filename)
+        #os.remove(filename)
         return True
 
 def get_player_color(image):
 
-    player_color = ''
-    print('get player color')
-    a2D = image.reshape(-1,image.shape[-1])
-    #remove a2D [0,0,0] items
-    print('a2D shape: ', a2D.shape)
-    time_start = time.time()
-    a2D = a2D[np.all(a2D != [0,0,0], axis=1)] #removendo black pixels
-    #removendo pixels brancos
-    a2D = a2D[np.all(a2D!=[255,255,255], axis=1)]
-    print('a2D pos remocao black pixels e pixels brancos shape: ', a2D.shape)
-    col_range = (256, 256, 256) # generically : a2D.max(0)+1
-    a1D = np.ravel_multi_index(a2D.T, col_range)
-    bgr_format = np.unravel_index(np.bincount(a1D).argmax(), col_range)
-    #sai no formato [Blue, Green, Red] de chances
-    print('cor predominante: ', bgr_format )
-    time_end = time.time()
-    print('time to get color: ', time_end - time_start)
-    cv2.imshow('teste', image)
-    cv2.resizeWindow('teste', 600,600)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    try:
+        player_color = ''
+        a2D = image.reshape(-1,image.shape[-1])
+        #remove a2D [0,0,0] items
+        a2D = a2D[np.all(a2D >= [10,10,10], axis=1)] #removendo black pixels
+        #removendo pixels brancos
+        a2D = a2D[np.all(a2D<=[240,240,240], axis=1)]
+        print('a2D pos remocao black pixels e pixels brancos shape: ', a2D.shape)
+        col_range = (256, 256, 256) # generically : a2D.max(0)+1
+        a1D = np.ravel_multi_index(a2D.T, col_range)
+        bgr_format = np.unravel_index(np.bincount(a1D).argmax(), col_range)
+        print('bgr_format: ', bgr_format)
+        #colores = ["blue", "red", "green", "purple", "yellow", "black"]
+        colores ={"red" : [49,34,185],
+                "blue":[181,148,21],
+                "green":[53,141,87],
+                "yellow":[30,176,218],
+                "purple":[116,46,76],
+                "black":[56,56,56]} #BLUE GREEN RED
+        
+        player_color=None
+        for key in colores:
+            if (identificar_color(bgr_format, colores[key], 95)):
+                player_color = key
+                break
+            else:
+                player_color = "blue"
+        #time_end = time.time()
+        #print('time to get color: ', time_end - time_start)
+    except Exception as e:
+        player_color = "blue"
+        print('error: ', e)
+    finally:
+        return player_color
 
-    None
+
+def create_matrix_from_masks(masks, ocr: recognition_class):
+    #cria matriz de adjacencia
+    matrix = []
+    territory_army_dict = {}
+    for item,mask in masks.items():
+        try:
+            army = int(ocr.recog_image(mask))
+        except:
+            army = 1
+        if(army is None):
+            army = 1
+        plyer_color = get_player_color(mask.copy())
+        territory_army_dict[item] = [army,plyer_color]
+
+        if (plyer_color is None):
+            print('pais: {0} com {1} tropas e cor {2}'.format(item, army, plyer_color))
+            cv2.imshow(item, mask)
+            cv2.resizeWindow(item, 600,600)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+    
+    # for territory, army in territory_army_dict.items():
+    #     print('territory {0} e army {1}'.format(territory, army))
+
+        # #cria linha da matriz
+        # matrix_line = []
+        # for territory2, army2 in territory_army_dict.items():
+        #     if (territory == territory2):
+        #         matrix_line.append(0)
+        #     else:
+        #         matrix_line.append(1)
+        # matrix.append(matrix_line)
+    
+    return territory_army_dict
+
 
 segmentation_prediction = segmentation_country_class("./DA_rodrigo_4000_mobilenetv2.h5")
-ocr = recognition_class("text-recognition-resnet-fc-ft-v3-acc.xml","text-recognition-resnet-fc-ft-v3-norm.bin")
-screenshot_filepath = "crop_screenshot_teste.jpg"
+ocr = recognition_class("text-recognition-resnet-fc-ft-v3-norm.xml","text-recognition-resnet-fc-ft-v3-norm.bin")
+screenshot_filepath = "crop_screenshot_completo.jpg"
 
+colores = ["blue","red","green","purple","yellow","black"]
+cinza_objectivo = 0
+Jugador_puc = JugadorGrafoOptimizado("JOGADOR_PUCPR_IA", colores[0], misiones[cinza_objectivo])
+mision_desconocida = [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+jugador1 = Jugador("1",colores[1],mision_desconocida)
+jugador2 = Jugador("2",colores[2],mision_desconocida)
+jugador3 = Jugador("3",colores[3],mision_desconocida)
+jugador4 = Jugador("4",colores[4],mision_desconocida)
+jugador5 = Jugador("5",colores[5],mision_desconocida)
 
+jugadores = [Jugador_puc,jugador1,jugador2,jugador3,jugador4,jugador5]
+tablero = Tablero(jugadores)
+Jugador_puc.interpretar_mision(misiones[cinza_objectivo])
+Jugador_puc.descripcion = misiones[cinza_objectivo].descripcion
 
-
-agente = simple_agent_matrix()
+#agente = simple_agent_matrix()
 
 while(True):
     print('Digite o seu comando: \n')
     print('1 - Tirar printscreen\n')
     print('2 - Tirar printscreen e fazer ocr\n')
-    print('3 - usar jpg teste\n')
-    print('4 - get matrix estado com imagem printscreen\n')
+    print('3 - jogar agente\n')
+    print('4 - get matriz com ultimo printscreen \n')
     comando = input('Digite o comando: ')
     
     os.system('cls')
@@ -129,30 +234,34 @@ while(True):
             sys.exit()
         print('Printscreen tirado com sucesso!\n')
         masks = segmentation_prediction.predict_masks(screenshot_filepath)
-        
-        for item, mask in masks.items():
-            recog_image = mask.copy()
-            res = ocr.recog_image(recog_image)
-            print("pais: {0} com {1} tropas".format(item, res))
-            if ((mask is None) or (res is None)):
-                print('mask is none')
-                continue
-            
-            cv2.imshow(item, mask)
-            cv2.resizeWindow(item, 600,600)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
-    if (comando == '3'):
-        test_path = 'crop_teste.jpg'
-        masks = segmentation_prediction.predict_masks(screenshot_filepath)
-        for item, mask in masks.items():
-            recog_image = mask.copy()
-            res = ocr.recog_image(recog_image)
-            print("pais: {0} com {1} tropas".format(item, res))
-            if ((mask is None) or (res is None)):
-                print('mask is none')
-                continue
 
+    if (comando == '3'):
+        masks = segmentation_prediction.predict_masks(screenshot_filepath)
+        dic = create_matrix_from_masks(masks, ocr)
+
+        tablero.actualizarFronDic(dic)
+        tablero.mostrar_tablero()
+        
+        print('selecione a acao: \n')
+        print('1 - reforcar\n')
+        
+        print('2 - atacar\n')
+        print('3 - mover\n')
+        acao = input('selecione a acao: \n')
+
+        Jugador_puc.tropas_por_turno = 3
+        Jugador_puc.actualizar_tropas_por_turno()
+        Jugador_puc.iniciar_turno()
+
+        Jugador_puc.reforzar(tablero)
+
+        Jugador_puc.atacar(tablero)
+        
+        Jugador_puc.mover_tropas(tablero)
+        tablero.reset_tropas_recibidas()
+
+        # for key,value in dic:
+        #     print('key: ', key)
 
             # cv2.imshow(item, mask)
             # cv2.resizeWindow(item, 600,600)
@@ -171,18 +280,11 @@ while(True):
         player_dict = {}
         imgeral = cv2.imread(screenshot_filepath)
         masks = segmentation_prediction.predict_masks(screenshot_filepath)
-        for item, mask in masks.items():
-            
-            recog_image = mask.copy()
-            color = get_player_color(recog_image)
-            troop = ocr.recog_image(recog_image)
-            
-            print("pais: {0} com {1} tropas".format(item, troop))
-            
-            if ((mask is None) or (troop is None)):
-                print('pais nao identificado')
-                continue
-
+        dic = create_matrix_from_masks(masks, ocr)
+        print('pre actualizar matriz')
+        print(len(dic))
+        tablero.actualizarFronDic(dic)
+        tablero.mostrar_tablero()
 
 # cv_image = cv2.imread("crop_screenshot.jpg")
 # masks = segmentation_prediction.predict_masks("crop_screenshot.jpg")

@@ -100,7 +100,7 @@ class JugadorGrafoOptimizado(Jugador):
             print(f"Reforzado el país {pais} con {cantidad} tropas.")
             indice = nombres.index(pais)
             vector[indice + 5] = cantidad
-        print(vector)
+        #print(vector)
         return vector
     
     def factor_priorizacion_mision(self):
@@ -167,6 +167,7 @@ class JugadorGrafoOptimizado(Jugador):
         for objetivo in paises_objetivo:
             min_distancia = float('inf')
             pais_cercano_actual = None
+            print(self.paises)
             for pais in self.paises:
                 try:
                     distancia = nx.dijkstra_path_length(G, source=pais.nombre, target=objetivo.nombre, weight='weight')
@@ -359,7 +360,7 @@ class JugadorGrafoOptimizado(Jugador):
         vector[indice + 5] = 255
         indice = nombres.index(destino.get_nombre())
         vector[indice + 5] = 255
-        print(vector)
+        #print(vector)
         #tablero.batalla(origen, destino, self)
         return(vector)
 
@@ -548,7 +549,7 @@ class JugadorGrafoOptimizado(Jugador):
             indice = nombres.index(destino)
             vector[indice + 5] = 255
             action_vectors.append(vector)
-            print(vector)
+            #print(vector)
             
         if (len(action_vectors) == 0):
             vector=[0] * 47

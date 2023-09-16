@@ -120,6 +120,18 @@ class Tablero:
             jugador.paises.append(pais)
             if pais.tropas <= 0:
                pais.tropas = 1
+    def actualizarFronDic(self,dic):
+        for jugador in self.jugadores:
+            jugador.paises = []
+        #colores = ["blue", "red", "green", "purple", "yellow", "black"]
+        for key, value in dic.items():
+            
+            pais = self.paises[key]
+            pais.tropas = value[0]
+            jugador = next((jug for jug in self.jugadores if jug.color == value[1]), None)
+            pais.jugador = jugador
+            #print("Aqui : ",key,value[1])
+            jugador.paises.append(pais)
 
     def actualizarmatriz(self, matriz):
         nombres_paises = list(self.paises.keys())
@@ -133,7 +145,7 @@ class Tablero:
                 continue  # Salta si no hay jugador con el color actual
             jugador.paises = []
             for j in range(len(matriz[i])):
-                if j < len(nombres_paises):
+                if j < len(nombres_paises): 
                     cantidad_tropas = matriz[i][j]
                     if cantidad_tropas > 0:
                         pais = self.paises[nombres_paises[j]]

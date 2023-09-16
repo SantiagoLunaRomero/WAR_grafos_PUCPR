@@ -25,6 +25,23 @@ class recognition_class():
         time_recognition = time.time()
         if(image.shape[0] == 0 or image.shape[1] == 0):
             return None
+        
+        # pre_processed_im = cv2.imread('california.png')
+# #pre_processed_im = cv2.threshold(pre_processed_im, 230, 255, cv2.THRESH_BINARY)
+# image = cv2.cvtColor(pre_processed_im, cv2.COLOR_BGR2GRAY)
+# image_crop = run_preprocesing_on_crop(image, (W, H))
+# cv2.imwrite("result.jpg", image_crop[0][0])
+# result_tresh = cv2.threshold(image, 125, 255, cv2.THRESH_BINARY)[1]
+# #result_tresh = cv2.threshold(image, 230, 255, cv2.THRESH_BINARY_INV)[1]
+# cv2.imwrite("result_tresh.jpg", result_tresh)
+# result_tresh = np.expand_dims(result_tresh, 0)
+# result_tresh = np.expand_dims(result_tresh, 0)
+# print(result_tresh.shape)
+
+# time_recognition = time.time()
+# result = recognition_compiled_model([image_crop])[recognition_output_layer]
+
+
         gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         resized_img = cv2.resize(gray_img, (self.network_width, self.network_height))
         infer_img = resized_img.reshape((1,) * 2 + resized_img.shape)
@@ -49,7 +66,7 @@ class recognition_class():
             result_debug += parsed_letter
         #print('debug: ', result_debug)
         if (ret == ''):
-            ret = 'None'
+            ret = '1'
         return ret
 
 
@@ -58,15 +75,25 @@ class segmentation_country_class():
     def __init__(self, model_path):
         self.model_path = model_path
         self.model = load_model(self.model_path, compile=False)
+        # self.countries_order = [
+        #     "alaska", "mackenzie", "groenladia", "vancouver", "ottawa", "labrador",
+        #     "california", "nova york", "mexico", "venezuela", "peru", "brasil", 
+        #     "argentina", "islandia", "inglaterra", "francia", "alemania", "suecia",
+        #     "polonia", "moscou", "omsk", "dudinka", "siberia", "vladvostok", 
+        #     "argelia", "egipto", "orientemedio", "aral", "Tchita", "congo", "sudan",
+        #     "india", "china", "mongolia", "africa del sur", "madagascar", "vietnan",
+        #     "japon", "sumatra", "borneo", "neuva guinea", "australia"
+        # ]
         self.countries_order = [
-            "alaska", "mackenzie", "groenladia", "vancouver", "ottawa", "labrador",
-            "california", "nova york", "mexico", "venezuela", "peru", "brasil", 
-            "argentina", "islandia", "inglaterra", "francia", "alemania", "suecia",
-            "polonia", "moscou", "omsk", "dudinka", "siberia", "vladvostok", 
-            "argelia", "egipto", "orientemedio", "aral", "Tchita", "congo", "sudan",
-            "india", "china", "mongolia", "africa del sur", "madagascar", "vietnan",
-            "japon", "sumatra", "borneo", "neuva guinea", "australia"
+            "Alaska", "Mackenzie", "Groenlandia", "Vancouver", "Ottawa", "Labrador",
+            "California", "Nueva York", "México", "Venezuela", "Perú", "Brasil", 
+            "Argentina", "Islandia", "Inglaterra", "Francia", "Alemania", "Suecia",
+            "Polonia", "Moscú", "Omsk", "Dudinka", "Siberia", "Vladivostok", 
+            "Argelia", "Egipto", "Oriente Medio", "Aral", "Chita", "Congo", "Sudán",
+            "India", "China", "Mongolia", "Sudáfrica", "Madagascar", "Vietnam",
+            "Japón", "Sumatra", "Borneo", "Nueva Guinea", "Australia"
         ]
+
                 
     def predict_masks(self, img_path):
         img = cv2.imread(img_path)
