@@ -116,7 +116,7 @@ class segmentation_country_class():
         #predicted_mask = cv2.morphologyEx(predicted_mask, cv2.MORPH_OPEN, kernel_open)
         
         # Aplica la dilatación para aumentar el ancho de los bordes
-        kernel_dilate = np.ones((5, 5), np.uint8)
+        kernel_dilate = np.ones((3, 3), np.uint8)
         predicted_mask = cv2.dilate(predicted_mask, kernel_dilate, iterations=1)
 
         # Nombres de los países en orden
