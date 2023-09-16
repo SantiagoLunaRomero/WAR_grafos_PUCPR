@@ -123,15 +123,26 @@ def get_player_color(image):
 
     try:
         player_color = ''
-        a2D = image.reshape(-1,image.shape[-1])
-        #remove a2D [0,0,0] items
-        a2D = a2D[np.all(a2D >= [10,10,10], axis=1)] #removendo black pixels
-        #removendo pixels brancos
-        a2D = a2D[np.all(a2D<=[240,240,240], axis=1)]
-        print('a2D pos remocao black pixels e pixels brancos shape: ', a2D.shape)
-        col_range = (256, 256, 256) # generically : a2D.max(0)+1
-        a1D = np.ravel_multi_index(a2D.T, col_range)
-        bgr_format = np.unravel_index(np.bincount(a1D).argmax(), col_range)
+        # a2D = image.reshape(-1,image.shape[-1])
+        # #remove a2D [0,0,0] items
+        # a2D = a2D[np.all(a2D >= [10,10,10], axis=1)] #removendo black pixels
+        # #removendo pixels brancos
+        # a2D = a2D[np.all(a2D<=[240,240,240], axis=1)]
+        # print('a2D pos remocao black pixels e pixels brancos shape: ', a2D.shape)
+        # col_range = (256, 256, 256) # generically : a2D.max(0)+1
+        # a1D = np.ravel_multi_index(a2D.T, col_range)
+        # bgr_format = np.unravel_index(np.bincount(a1D).argmax(), col_range)
+        # 1. Redimensiona la imagen en una matriz 2D de píxeles
+        a2D = image.reshape(-1, image.shape[-1])
+
+        # 2. Elimina los píxeles negros (valores bajos) y blancos (valores altos)
+        a2D = a2D[np.all(a2D >= [10, 10, 10], axis=1)]  # Elimina píxeles negros
+        a2D = a2D[np.all(a2D <= [240, 240, 240], axis=1)]  # Elimina píxeles blancos
+
+        # 3. Encuentra el color que más se repite en los píxeles restantes
+        unique_colors, color_counts = np.unique(a2D, axis=0, return_counts=True)
+        most_common_color_index = np.argmax(color_counts)
+        bgr_format = unique_colors[most_common_color_index]
         print('bgr_format: ', bgr_format)
         #colores = ["blue", "red", "green", "purple", "yellow", "black"]
         colores ={"red" : [49,34,185],
@@ -143,7 +154,7 @@ def get_player_color(image):
         
         player_color=None
         for key in colores:
-            if (identificar_color(bgr_format, colores[key], 10)):
+            if (identificar_color(bgr_format, colores[key], 5)):
                 player_color = key
                 break
             else:
@@ -172,9 +183,8 @@ def create_matrix_from_masks(masks, ocr: recognition_class):
             army = 1
 
         player_color = get_player_color(mask.copy())
-
         territory_army_dict[item] = [army,player_color]
-
+        print('pais: {0} com {1} tropas e cor {2}'.format(item, army, player_color))
         if (player_color is None):
             print('pais: {0} com {1} tropas e cor {2}'.format(item, army, player_color))
 
