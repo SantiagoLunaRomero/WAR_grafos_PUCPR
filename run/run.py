@@ -204,10 +204,12 @@ def create_matrix_from_masks(masks, ocr: recognition_class):
 segmentation_prediction = segmentation_country_class("./DA_rodrigo_4000_mobilenetv2.h5")
 ocr = recognition_class("text-recognition-resnet-fc-ft-v2-norm.xml","text-recognition-resnet-fc-ft-v2-norm.bin")
 screenshot_filepath = "crop_screenshot_completo.jpg"
-
+#CORES  = [  0   ,  1  ,   2   ,    3    ,  4     ,   5  ]
 colores = ["blue","red","green","purple","yellow","black"]
+#MISAON
 cinza_objectivo = 0
 Jugador_puc = JugadorGrafoOptimizado("JOGADOR_PUCPR_IA", colores[0], misiones[cinza_objectivo])
+
 mision_desconocida = [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 jugador1 = Jugador("1",colores[1],mision_desconocida)
 jugador2 = Jugador("2",colores[2],mision_desconocida)
