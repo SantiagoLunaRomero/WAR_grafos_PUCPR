@@ -18,6 +18,7 @@ from Jugadores.jugadorGrafoOptimizado_2Cambios import JugadorGrafoOptimizado
 
 import math
 from matplotlib import pyplot as plt   
+import pytesseract
 
 def calcular_diferencia_color(color1, color2):
     r1, g1, b1 = color1
@@ -174,7 +175,13 @@ def create_matrix_from_masks(masks, ocr: recognition_class):
     territory_army_dict = {}
     for item,mask in masks.items():
         try:
-            army = int(ocr.recog_image(mask, item))
+            #army = int(ocr.recog_image(mask, item))
+            image_gray = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+            _, binary_image = cv2.threshold(image_gray, 200, 255, cv2.THRESH_BINARY_INV)
+
+            army = pytesseract.image_to_string(binary_image, config='--psm 6 -c tessedit_char_whitelist=0123456789')
+            print("Resultado :",army)
+            army = int(army)
         except Exception as e:
             print('Erro recog image tropas {0}'.format(item))
             print('Erro: ', e)            

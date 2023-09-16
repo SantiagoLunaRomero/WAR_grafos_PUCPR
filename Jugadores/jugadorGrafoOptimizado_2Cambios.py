@@ -71,7 +71,7 @@ class JugadorGrafoOptimizado(Jugador):
                 vecinos_enemigos = [tablero.paises[vecino] for vecino in pais_a_reforzar.vecinos if tablero.paises[vecino].jugador != self]
                 
                 # Si el país ya tiene una ventaja significativa sobre todos sus vecinos enemigos, considera el siguiente país
-                if all(pais_a_reforzar.tropas > vecino.tropas * 3.25 for vecino in vecinos_enemigos):
+                if all(pais_a_reforzar.tropas > vecino.tropas * 5 for vecino in vecinos_enemigos):
                     continue
                 else:
                     #print("reforzando pais :",pais_a_reforzar.get_nombre())
