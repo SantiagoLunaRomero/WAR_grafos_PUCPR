@@ -105,19 +105,19 @@ class segmentation_country_class():
         prediction = self.model.predict(img_preprocessed)
         predicted_mask = prediction[0]
 
-        umbral = 0.4  # Establece el valor de umbral que deseas
+        umbral = 0.5  # Establece el valor de umbral que deseas
         # Aplica el umbral a la matriz de predicción
         predicted_mask = (predicted_mask >= umbral).astype(np.uint8)
         kernel = np.ones((15, 15), np.uint8)
         predicted_mask = cv2.morphologyEx(predicted_mask, cv2.MORPH_CLOSE, kernel)
-        predicted_mask = cv2.morphologyEx(predicted_mask, cv2.MORPH_CLOSE, kernel)
+        #predicted_mask = cv2.morphologyEx(predicted_mask, cv2.MORPH_CLOSE, kernel)
         # Aplica la operación "opening" para eliminar áreas pequeñas (outliers)
         #kernel_open = np.ones((5, 5), np.uint8)
         #predicted_mask = cv2.morphologyEx(predicted_mask, cv2.MORPH_OPEN, kernel_open)
         
         # Aplica la dilatación para aumentar el ancho de los bordes
         kernel_dilate = np.ones((5, 5), np.uint8)
-        predicted_mask = cv2.dilate(predicted_mask, kernel_dilate, iterations=2)
+        predicted_mask = cv2.dilate(predicted_mask, kernel_dilate, iterations=1)
 
         # Nombres de los países en orden
 
