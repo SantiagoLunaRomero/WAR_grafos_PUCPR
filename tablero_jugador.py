@@ -51,7 +51,7 @@ class Tablero:
         self.turno = 0
         self.paises = self.generar_paises()
         #self.asignar_paises_a_jugadores()
-        #self.grafo = self.construir_grafo_con_peso()
+        self.grafo = None#self.construir_grafo_con_peso()
         self.matriz_historial = []
 
     def generar_paises(self):
@@ -132,6 +132,7 @@ class Tablero:
             pais.jugador = jugador
             #print("Aqui : ",key,value[1])
             jugador.paises.append(pais)
+        self.construir_grafo_con_peso()
 
     def actualizarmatriz(self, matriz):
         nombres_paises = list(self.paises.keys())
@@ -352,6 +353,7 @@ class Tablero:
             for vecino in pais.vecinos:
                 peso = self.paises[vecino].tropas
                 G.add_edge(nombre_pais, vecino, weight=peso)
+        self.grafo = G
         return G
     
     def matriz_de_adyacencia(self, orden_nodos=None):
