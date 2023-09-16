@@ -136,14 +136,20 @@ class segmentation_country_class():
         for idx, country in enumerate(self.countries_order):
             mask = cv2.resize(predicted_mask[:, :, idx], (img.shape[1], img.shape[0]))
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            for contour in contours:
-                if cv2.contourArea(contour) >= min_mask_size:
-                    x, y, w, h = cv2.boundingRect(contour)
-                    # Aplica el rectángulo de recorte solo si el tamaño de la máscara es suficiente
-                    original_img = img.copy()
-                    result_img = cv2.bitwise_and(original_img, original_img, mask=mask)
-                    cropped_img = result_img[y:y+h, x:x+w]
-                    masks_dict[country] = cropped_img
+            if not contours or cv2.contourArea(contours[0]) < min_mask_size:
+                # Si no hay contornos o no cumplen el umbral de tamaño, usa la imagen original
+                x, y, w, h = cv2.boundingRect(mask)
+                original_img = img.copy()
+                result_img = cv2.bitwise_and(original_img, original_img, mask=mask)
+                cropped_img = result_img[y:y+h, x:x+w]
+                masks_dict[country] = cropped_img
+            else:
+                x, y, w, h = cv2.boundingRect(contours[0])
+                # Aplica el rectángulo de recorte solo si el tamaño de la máscara es suficiente
+                original_img = img.copy()
+                result_img = cv2.bitwise_and(original_img, original_img, mask=mask)
+                cropped_img = result_img[y:y+h, x:x+w]
+                masks_dict[country] = cropped_img
         return masks_dict
 
 
