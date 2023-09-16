@@ -167,7 +167,6 @@ class JugadorGrafoOptimizado(Jugador):
         for objetivo in paises_objetivo:
             min_distancia = float('inf')
             pais_cercano_actual = None
-            print(self.paises)
             for pais in self.paises:
                 try:
                     distancia = nx.dijkstra_path_length(G, source=pais.nombre, target=objetivo.nombre, weight='weight')
