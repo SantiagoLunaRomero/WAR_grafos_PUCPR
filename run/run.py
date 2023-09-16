@@ -174,7 +174,7 @@ def create_matrix_from_masks(masks, ocr: recognition_class):
     territory_army_dict = {}
     for item,mask in masks.items():
         try:
-            army = int(ocr.recog_image(mask))
+            army = int(ocr.recog_image(mask, item))
         except Exception as e:
             print('Erro recog image tropas {0}'.format(item))
             print('Erro: ', e)            
@@ -189,12 +189,12 @@ def create_matrix_from_masks(masks, ocr: recognition_class):
             print('pais: {0} com {1} tropas e cor {2}'.format(item, army, player_color))
 
             print('pais {0} army {1} color {2}'.format(item, army, player_color))        
-            # cv2.imshow(item, mask)
-            # cv2.resizeWindow(item, 300, 300)
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
-        filename = 'output_crops_mask/' + item + '_' + str(army) + '_' + player_color +'.jpg'
-        cv2.imwrite(filename, mask)
+
+        # cv2.imshow(item, mask)
+        # cv2.resizeWindow(item, 300, 300)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
 
     # for territory, army in territory_army_dict.items():
     #     print('territory {0} e army {1}'.format(territory, army))
@@ -212,7 +212,7 @@ def create_matrix_from_masks(masks, ocr: recognition_class):
 
 
 segmentation_prediction = segmentation_country_class("./DA_rodrigo_4000_mobilenetv2.h5")
-ocr = recognition_class("text-recognition-resnet-fc-ft-v3-norm.xml","text-recognition-resnet-fc-ft-v3-norm.bin")
+ocr = recognition_class("text-recognition-resnet-fc-ft-v2-norm.xml","text-recognition-resnet-fc-ft-v2-norm.bin")
 screenshot_filepath = "crop_screenshot_completo.jpg"
 #CORES  = [  0   ,  1  ,   2   ,    3    ,  4     ,   5  ]
 colores = ["blue","red","green","purple","yellow","black"]
@@ -307,6 +307,13 @@ while(True):
         tablero.actualizarFronDic(dic)
         tablero.mostrar_tablero()
 
+    if (comando == '5'):#read all images and apply
+        input_folder = './input_batch/'
+        for file in os.listdir(input_folder):
+            if file.endswith(".png"):
+                masks = segmentation_prediction.predict_masks(input_folder + file)
+                dic = create_matrix_from_masks(masks, ocr)
+                
 # cv_image = cv2.imread("crop_screenshot.jpg")
 # masks = segmentation_prediction.predict_masks("crop_screenshot.jpg")
 

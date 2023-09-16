@@ -21,38 +21,67 @@ class recognition_class():
         self.network_width = self.input_layer.shape[3]
         print('layer input shape: ', self.input_layer.shape)
 
-    def recog_image(self, image):
-        time_recognition = time.time()
+
+    def pre_process_mask(self, mask):
+        pre_processed_im = cv2.threshold(mask.copy(), 230, 255, cv2.THRESH_BINARY )[1]
+        image_gray = cv2.cvtColor(pre_processed_im, cv2.COLOR_BGR2GRAY)
+        
+        kernel = np.ones((5,5),np.uint8)
+        final_img = cv2.morphologyEx(image_gray, cv2.MORPH_CLOSE, kernel)
+        #final_img = cv2.morphologyEx(final_img, cv2.MORPH_OPEN, kernel)
+        #cv2.imwrite(output_filename, image_gray)
+
+        kernel = np.ones((3,3),np.uint8)
+        final_img = cv2.dilate(final_img,kernel,iterations = 1)
+        cnts,new = cv2.findContours(final_img.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = sorted(cnts, key = cv2.contourArea, reverse = True)
+        
+        contour_choice = None
+        area_choice = None
+        for c in cnts:
+            area = cv2.contourArea(c)        
+            if(area < 50 and area > 1):
+                contour_choice = c
+                area_choice = area
+                break
+
+        x,y,w,h = cv2.boundingRect(contour_choice)
+
+        # Aumenta el tamaño del bounding box
+        nuevo_x = max(0, x - 10)  # Puedes ajustar el valor 10 según tus necesidades
+        nuevo_y = max(0, y - 10)  # Puedes ajustar el valor 10 según tus necesidades
+        nuevo_w = min(final_img.shape[1] - nuevo_x, w + 20)  # Puedes ajustar el valor 20 según tus necesidades
+        nuevo_h = min(final_img.shape[0] - nuevo_y, h + 20)  # Puedes ajustar el valor 20 según tus necesidades
+
+        # Recorta la imagen con el nuevo bounding box
+        crop_img = mask.copy()[nuevo_y:nuevo_y+nuevo_h, nuevo_x:nuevo_x+nuevo_w]
+        crop_img = cv2.resize(crop_img, (32, 32))
+        # Crear un nuevo arreglo con tamaño 100x32 y llenarlo con ceros
+        nueva_imagen = np.zeros((32, 100, 3), dtype=np.uint8)
+
+        # Calcular las coordenadas para centrar la imagen redimensionada en el nuevo arreglo
+        x_offset = (nueva_imagen.shape[1] - crop_img.shape[1]) // 2
+        y_offset = (nueva_imagen.shape[0] - crop_img.shape[0]) // 2
+
+        # Colocar la imagen redimensionada en el centro del nuevo arreglo
+        nueva_imagen[y_offset:y_offset+crop_img.shape[0], x_offset:x_offset+crop_img.shape[1]] = crop_img
+        return nueva_imagen
+    
+    def recog_image(self, image, item):
+
         if(image.shape[0] == 0 or image.shape[1] == 0):
             return None
         
-        # pre_processed_im = cv2.imread('california.png')
-# #pre_processed_im = cv2.threshold(pre_processed_im, 230, 255, cv2.THRESH_BINARY)
-# image = cv2.cvtColor(pre_processed_im, cv2.COLOR_BGR2GRAY)
-# image_crop = run_preprocesing_on_crop(image, (W, H))
-# cv2.imwrite("result.jpg", image_crop[0][0])
-# result_tresh = cv2.threshold(image, 125, 255, cv2.THRESH_BINARY)[1]
-# #result_tresh = cv2.threshold(image, 230, 255, cv2.THRESH_BINARY_INV)[1]
-# cv2.imwrite("result_tresh.jpg", result_tresh)
-# result_tresh = np.expand_dims(result_tresh, 0)
-# result_tresh = np.expand_dims(result_tresh, 0)
-# print(result_tresh.shape)
+        pre_processed_im = self.pre_process_mask(image.copy())
+        
 
-# time_recognition = time.time()
-# result = recognition_compiled_model([image_crop])[recognition_output_layer]
-
-
-        gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        gray_img = cv2.cvtColor(pre_processed_im, cv2.COLOR_BGR2GRAY)
         resized_img = cv2.resize(gray_img, (self.network_width, self.network_height))
+        write_image = resized_img.copy()
         infer_img = resized_img.reshape((1,) * 2 + resized_img.shape)
-#        print(infer_img.shape)
-        result = self.compiled_model([infer_img])[self.output_layer]
-        time_recognition_end = time.time()
-        #print("time infer recognition: ", time_recognition_end - time_recognition)
-        # # Squeeze the output to remove unnecessary dimension.
-        recognition_results_test = np.squeeze(result)
 
-        #print(recognition_results_test.shape)
+        result = self.compiled_model([infer_img])[self.output_layer]
+        recognition_results_test = np.squeeze(result)
 
         result_debug = ''
         ret = ''
@@ -67,6 +96,9 @@ class recognition_class():
         #print('debug: ', result_debug)
         if (ret == ''):
             ret = '1'
+
+        filename = 'output_crops_mask/' + item + '_' + str(ret) + '.jpg'
+        cv2.imwrite(filename, write_image)
         return ret
 
 
