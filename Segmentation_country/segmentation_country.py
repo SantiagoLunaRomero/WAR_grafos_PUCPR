@@ -97,8 +97,8 @@ class recognition_class():
         if (ret == ''):
             ret = '1'
 
-        filename = 'output_crops_mask/' + item + '_' + str(ret) + '.jpg'
-        cv2.imwrite(filename, write_image)
+        #filename = 'output_crops_mask/' + item + '_' + str(ret) + '.jpg'
+        #cv2.imwrite(filename, write_image)
         return ret
 
 

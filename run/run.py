@@ -15,10 +15,11 @@ from misiones import misiones
 from tablero_jugador import Tablero
 from Jugadores.jugador import Jugador
 from Jugadores.jugadorGrafoOptimizado_2Cambios import JugadorGrafoOptimizado
-
+from io import StringIO
 import math
 from matplotlib import pyplot as plt   
 import pytesseract
+import getpass
 
 def calcular_diferencia_color(color1, color2):
     r1, g1, b1 = color1
@@ -247,9 +248,10 @@ while(True):
     print('2 - Tirar printscreen e fazer ocr\n')
     print('3 - jogar agente\n')
     print('4 - get matriz com ultimo printscreen \n')
+
     comando = input('Digite o comando: ')
-    
     os.system('cls')
+
     if (comando == '1'):
         if (not get_chrome_printscreen(screenshot_filepath)):
             print("No se encontró una ventana con el título 'Google Chrome'")
@@ -272,37 +274,26 @@ while(True):
         
         print('selecione a acao: \n')
         print('1 - reforcar\n')
-        
         print('2 - atacar\n')
         print('3 - mover\n')
-        acao = input('selecione a acao: \n')
-
-        Jugador_puc.tropas_por_turno = 3
-        Jugador_puc.actualizar_tropas_por_turno()
-        Jugador_puc.iniciar_turno()
-
-        Jugador_puc.reforzar(tablero)
-
-        Jugador_puc.atacar(tablero)
-        
-        Jugador_puc.mover_tropas(tablero)
-        tablero.reset_tropas_recibidas()
-
-        # for key,value in dic:
-        #     print('key: ', key)
-
-            # cv2.imshow(item, mask)
-            # cv2.resizeWindow(item, 600,600)
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
-            # cv2.imshow(item, mask)
-            # cv2.resizeWindow(item, 600,600)
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
-        # imgeral = cv2.imread(screenshot_filepath)
-        # cv2.imshow('imagem', imgeral)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
+        print('4 - voltar ao menu\n')
+        #acao = input('selecione a acao: \n')
+        input_user = getpass.getpass(prompt="acao: ")
+        acao = input_user[0]
+        extra = input_user[1:]
+        print('acao: ', acao)
+        print('demais caracteres: ', extra)
+        if (acao != '4'):
+            if (acao == '1'):
+                Jugador_puc.tropas_por_turno = int(extra)
+                Jugador_puc.actualizar_tropas_por_turno()
+                Jugador_puc.iniciar_turno()
+                Jugador_puc.reforzar(tablero)
+            if (acao == '2'):  
+                Jugador_puc.atacar(tablero)
+            if (acao == '3'):
+                Jugador_puc.mover_tropas(tablero)
+                tablero.reset_tropas_recibidas()
 
     if (comando == '4'):
         player_dict = {}
